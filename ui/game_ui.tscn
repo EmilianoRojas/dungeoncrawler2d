@@ -1,0 +1,131 @@
+[gd_scene load_steps=3 format=3 uid="uid://b8x7q6y5z4w3"]
+
+[ext_resource type="Script" path="res://ui/game_ui.gd" id="1_u7x8y"]
+[ext_resource type="PackedScene" uid="uid://hp_bar_component" path="res://ui/components/hp_bar.tscn" id="2_hpbar"]
+
+[node name="GameUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_u7x8y")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -200.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="RichTextLabel" type="RichTextLabel" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+scroll_following = true
+
+[node name="BattleContainer" type="HBoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 150.0
+grow_horizontal = 2
+alignment = 1
+
+[node name="PlayerInfo" type="VBoxContainer" parent="BattleContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="Label" type="Label" parent="BattleContainer/PlayerInfo"]
+layout_mode = 2
+text = "Player"
+horizontal_alignment = 1
+
+[node name="HPBar" parent="BattleContainer/PlayerInfo" instance=ExtResource("2_hpbar")]
+layout_mode = 2
+
+[node name="VSLabel" type="Label" parent="BattleContainer"]
+layout_mode = 2
+text = "VS"
+
+[node name="EnemyInfo" type="VBoxContainer" parent="BattleContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="Label" type="Label" parent="BattleContainer/EnemyInfo"]
+layout_mode = 2
+text = "Enemy"
+horizontal_alignment = 1
+
+[node name="HPBar" parent="BattleContainer/EnemyInfo" instance=ExtResource("2_hpbar")]
+layout_mode = 2
+
+[node name="SkillContainer" type="HBoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -280.0
+offset_right = 200.0
+offset_bottom = -220.0
+grow_horizontal = 2
+grow_vertical = 0
+alignment = 1
+
+[node name="Controls" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -400.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="Navigation" type="GridContainer" parent="Controls"]
+layout_mode = 2
+columns = 3
+
+[node name="Empty1" type="Control" parent="Controls/Navigation"]
+layout_mode = 2
+
+[node name="BtnNorth" type="Button" parent="Controls/Navigation"]
+layout_mode = 2
+text = "N"
+
+[node name="Empty2" type="Control" parent="Controls/Navigation"]
+layout_mode = 2
+
+[node name="BtnWest" type="Button" parent="Controls/Navigation"]
+layout_mode = 2
+text = "W"
+
+[node name="Empty3" type="Control" parent="Controls/Navigation"]
+layout_mode = 2
+
+[node name="BtnEast" type="Button" parent="Controls/Navigation"]
+layout_mode = 2
+text = "E"
+
+[node name="Empty4" type="Control" parent="Controls/Navigation"]
+layout_mode = 2
+
+[node name="BtnSouth" type="Button" parent="Controls/Navigation"]
+layout_mode = 2
+text = "S"
