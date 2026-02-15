@@ -45,15 +45,6 @@ func _ready() -> void:
 	else:
 		print("Error: Could not load Warrior class!")
 	
-	# Initialize Player Stats (Manual override or just ensure class applied)
-	player_entity.stats.set_base_stat(StatsComponent.StatType.HP, 100)
-	player_entity.stats.set_base_stat(StatsComponent.StatType.MAX_HP, 100)
-	player_entity.stats.set_base_stat(StatsComponent.StatType.STRENGTH, 10)
-	player_entity.stats.set_base_stat(StatsComponent.StatType.SPEED, 10)
-	
-	player_entity.stats.finalize_initialization()
-	
-	
 	# 3. Initialize Systems
 	grid_manager = GridManager.new()
 	add_child(grid_manager)

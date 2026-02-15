@@ -27,34 +27,28 @@ func initialize() -> void:
 	initialized = true
 
 
-func apply_class(class_data: Resource) -> void:
-	# class_data will be typed as ClassData later
-	if "base_stats" in class_data:
-		# Convert string keys to StatType enum keys
-		var raw_stats = class_data.base_stats
-		for key in raw_stats:
-			if key is String:
-				var enum_key = _get_stat_enum_from_string(key)
-				if enum_key != -1:
-					stats.set_base_stat(enum_key, raw_stats[key])
+func apply_class(class_data: ClassData) -> void:
+	# 1. Apply Base Stats
+	for key in class_data.base_stats:
+		var enum_key = -1
 		
-		stats.finalize_initialization()
+		# Handle both String keys (from JSON/Editor) and int keys (direct enum usage)
+		if key is String:
+			enum_key = StatsComponent.get_stat_type_from_string(key)
+		elif key is int:
+			enum_key = key
+			
+		if enum_key != -1:
+			stats.set_base_stat(enum_key, class_data.base_stats[key])
 	
-	if "starting_skills" in class_data:
-		for s in class_data.starting_skills:
-			skills.learn_skill(s)
+	stats.finalize_initialization()
+	
+	# 2. Learn Starting Skills
+	for s in class_data.starting_skills:
+		skills.learn_skill(s)
 
 func is_alive() -> bool:
 	return stats.current.get(StatsComponent.StatType.HP, 0) > 0
-
-func _get_stat_enum_from_string(key: String) -> int:
-	match key.to_lower():
-		"hp": return StatsComponent.StatType.HP
-		"max_hp": return StatsComponent.StatType.MAX_HP
-		"strength": return StatsComponent.StatType.STRENGTH
-		"speed": return StatsComponent.StatType.SPEED
-		"defense": return StatsComponent.StatType.DEFENSE
-	return -1
 
 func decide_action(context: Dictionary = {}) -> Action:
 	# Virtual method. 

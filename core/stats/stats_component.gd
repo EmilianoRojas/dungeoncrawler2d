@@ -43,3 +43,12 @@ func remove_bonus(stat_type: StatType, value: int) -> void:
 		bonus[stat_type] -= value
 		if bonus[stat_type] <= 0:
 			bonus.erase(stat_type)
+
+static func get_stat_type_from_string(stat_name: String) -> int:
+	match stat_name.to_lower():
+		"hp": return StatType.HP
+		"max_hp": return StatType.MAX_HP
+		"strength": return StatType.STRENGTH
+		"speed": return StatType.SPEED
+		"defense": return StatType.DEFENSE
+	return -1
