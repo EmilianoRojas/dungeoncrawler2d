@@ -41,8 +41,14 @@ func _ready():
 		print("FAILURE: System did not wait for player.")
 		
 	# Create Player Action
+	var dummy_skill = Skill.new()
+	dummy_skill.skill_name = "Test Attack"
+	dummy_skill.base_power = 10
+	dummy_skill.scaling_type = Skill.ScalingType.FLAT
+
 	var player_action = AttackAction.new(player, enemy)
-	player_action.damage = 10
+	player_action.skill_reference = dummy_skill
+	# player_action.damage = 10 # REMOVED
 	player_action.priority = 0
 	
 	# Submit Action (Triggers Resolution)

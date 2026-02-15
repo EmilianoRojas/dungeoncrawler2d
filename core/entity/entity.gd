@@ -65,7 +65,7 @@ func decide_action(context: Dictionary = {}) -> Action:
 		
 		if target:
 			var action = AttackAction.new(self, target)
-			action.damage = 5 # Simplification, real logic should use Skill
+			# action.damage = 5 # REMOVED
 			action.skill_reference = skill
 			return action
 			

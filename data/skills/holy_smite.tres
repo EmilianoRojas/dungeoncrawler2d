@@ -5,6 +5,8 @@
 [resource]
 script = ExtResource("1_skill")
 skill_name = "Holy Smite"
+scaling_type = 1
 scaling_stat = 2
-multiplier = 1.5
+scaling_percent = 1.5
+base_power = 0
 max_cooldown = 2

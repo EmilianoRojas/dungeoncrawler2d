@@ -5,6 +5,8 @@
 [resource]
 script = ExtResource("1_skill")
 skill_name = "Bite"
-scaling_stat = "strength"
-multiplier = 1.0
+scaling_type = 1
+scaling_stat = 2
+scaling_percent = 1.0
+base_power = 0
 max_cooldown = 0

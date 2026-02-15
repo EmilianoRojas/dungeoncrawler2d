@@ -5,6 +5,8 @@
 [resource]
 script = ExtResource("1_skill")
 skill_name = "Fireball"
+scaling_type = 1
 scaling_stat = 2
-multiplier = 2.0
+scaling_percent = 2.0
+base_power = 0
 max_cooldown = 3

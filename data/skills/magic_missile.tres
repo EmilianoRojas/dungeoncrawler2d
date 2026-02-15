@@ -5,6 +5,8 @@
 [resource]
 script = ExtResource("1_skill")
 skill_name = "Magic Missile"
+scaling_type = 1
 scaling_stat = 2
-multiplier = 0.8
+scaling_percent = 0.8
+base_power = 0
 max_cooldown = 0

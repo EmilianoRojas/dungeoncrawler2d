@@ -79,8 +79,8 @@ func _on_ui_skill_activated(skill: Skill) -> void:
 	
 	if target:
 		var action = AttackAction.new(player_entity, target)
-		action.damage = 10 # Should be calculated from skill
-		# In real impl: action.skill_reference = skill
+		# action.damage = 10 # REMOVED
+		action.skill_reference = skill
 		turn_manager.submit_player_action(action)
 
 func _try_move(dir: Vector2i) -> void:
