@@ -4,15 +4,27 @@ extends Resource
 @export var effect_id: StringName = "" # e.g. "lifesteal", "burn"
 
 enum Trigger {
+	# --- SKILL FLOW ---
+	ON_SKILL_CAST,
+
+	# --- DAMAGE PIPELINE ---
+	ON_PRE_DAMAGE_CALC,        # before base calculation
+	ON_DAMAGE_CALCULATED,      # after base damage (attacker phase)
+	ON_DAMAGE_RECEIVED_CALC,   # defender phase
+	ON_PRE_DAMAGE_APPLY,       # final adjustments
+
+	# --- AFTER APPLY ---
 	ON_DAMAGE_DEALT,
 	ON_DAMAGE_TAKEN,
-	ON_TURN_START,
-	ON_TURN_END,
-	ON_DEATH,
-	ON_CRIT,
+
+	# --- RESULT EVENTS ---
 	ON_KILL,
-	ON_SKILL_CAST,
-	ON_HEAL_RECEIVED
+	ON_DEATH,
+	ON_HEAL_RECEIVED,
+	
+	# --- TURN EVENTS ---
+	ON_TURN_START,
+	ON_TURN_END
 }
 
 enum Operation {
