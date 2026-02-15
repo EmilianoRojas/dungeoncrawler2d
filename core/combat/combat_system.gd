@@ -2,42 +2,30 @@ class_name CombatSystem
 extends Object
 
 static func deal_damage(source: Entity, target: Entity, amount: int) -> void:
-	var data = {
-		"source": source,
-		"target": target,
-		"damage": amount
-	}
-
-	# PRE DAMAGE (Optional, keeping placeholders if user wants to add them later)
-	# source.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_DEALT, data) # Assuming ON_DAMAGE_DEALT is post-process usually
-	# target.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_TAKEN, data)
-
-	# APPLY DAMAGE
-	# Use the new modify_current method. Subtract damage.
-	target.stats.modify_current(StatsComponent.StatType.HP, -data.damage)
+	var context = CombatContext.new(source, target)
+	context.damage = amount
 	
-	# Check death (moved from apply_damage_to_stats logic to here or kept separate?)
-	# Let's keep a death check helper or do it inline
+	# APPLY DAMAGE
+	target.stats.modify_current(StatsComponent.StatType.HP, -context.damage)
+	
+	# Check death
 	var current_hp = target.stats.current.get(StatsComponent.StatType.HP, 0)
 	if current_hp <= 0:
+		context.is_kill = true
 		# Dispatch ON_KILL for the source (attacker)
 		if source and source != target:
-			source.effects.dispatch(EffectResource.Trigger.ON_KILL, {
-				"source": source,
-				"target": target
-			})
+			source.effects.dispatch(EffectResource.Trigger.ON_KILL, context)
 			
-		target.effects.dispatch(EffectResource.Trigger.ON_DEATH, {})
-		# GlobalEventBus for death? Keeping legacy if needed.
-		# GlobalEventBus.dispatch("entity_died", {"entity": target}) 
+		target.effects.dispatch(EffectResource.Trigger.ON_DEATH, context)
 
 	# POST DAMAGE
-	source.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_DEALT, data)
-	target.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_TAKEN, data)
+	source.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_DEALT, context)
+	target.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_TAKEN, context)
 
 	# Log/UI events
-	GlobalEventBus.dispatch("combat_log", {"message": "%s attacks %s for %d damage" % [source.name, target.name, data.damage]}) 
-	GlobalEventBus.dispatch("damage_dealt", data)
+	# For global bus, we might still need a dict or update it to handle objects
+	GlobalEventBus.dispatch("combat_log", {"message": "%s attacks %s for %d damage" % [source.name, target.name, context.damage]}) 
+	# GlobalEventBus.dispatch("damage_dealt", context) # Passing context object might need GlobalBus update
 
 static func heal(target: Entity, amount: int) -> void:
 	if not target or amount <= 0: return
@@ -46,9 +34,8 @@ static func heal(target: Entity, amount: int) -> void:
 	target.stats.modify_current(StatsComponent.StatType.HP, amount)
 	
 	# Dispatch ON_HEAL_RECEIVED
-	target.effects.dispatch(EffectResource.Trigger.ON_HEAL_RECEIVED, {
-		"target": target,
-		"amount": amount
-	})
+	var context = CombatContext.new(null, target)
+	context.raw_data["amount"] = amount # Heal amount isn't damage, store in raw or add 'heal_amount' to context
+	target.effects.dispatch(EffectResource.Trigger.ON_HEAL_RECEIVED, context)
 	
 	GlobalEventBus.dispatch("combat_log", {"message": "%s healed for %d HP" % [target.name, amount]})

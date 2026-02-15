@@ -7,16 +7,19 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 		return
 
 	# 1. Trigger ON_SKILL_CAST
-	source.effects.dispatch(EffectResource.Trigger.ON_SKILL_CAST, {
-		"source": source,
-		"target": target,
-		"skill": skill
-	})
+	var context = CombatContext.new(source, target, skill)
+	source.effects.dispatch(EffectResource.Trigger.ON_SKILL_CAST, context)
 
 	var damage = FormulaCalculator.calculate_damage(skill, source)
 	
 	CombatSystem.deal_damage(source, target, damage)
 	
 	# 2. Apply Skill Effects
-	for effect in skill.applied_effects:
+	
+	# Effects on Self (e.g. Buffs, Recoil)
+	for effect in skill.on_cast_effects:
+		source.effects.apply_effect(effect)
+		
+	# Effects on Target (e.g. Debuffs, DoTs)
+	for effect in skill.on_hit_effects:
 		target.effects.apply_effect(effect)

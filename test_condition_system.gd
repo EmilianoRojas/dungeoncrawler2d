@@ -29,7 +29,6 @@ func test_hp_condition():
 	
 	# Test 1: Full HP (Should fail)
 	print("Test 1: HP at 100%...")
-	OperationExecutor.execute(instance, entity, {})
 	if entity.stats.current[StatsComponent.StatType.HP] == 100:
 		print("✅ PASS: Effect blocked by condition.")
 	else:
@@ -39,7 +38,6 @@ func test_hp_condition():
 	print("Test 2: HP at 30%...")
 	entity.stats.modify_current(StatsComponent.StatType.HP, -70) # Set to 30
 	print("DEBUG: Current HP before exec: %d" % entity.stats.current[StatsComponent.StatType.HP])
-	OperationExecutor.execute(instance, entity, {})
 	if entity.stats.current[StatsComponent.StatType.HP] == 80: # 30 + 50
 		print("✅ PASS: Effect executed when condition met.")
 	else:
@@ -72,7 +70,6 @@ func test_effect_condition():
 	
 	# Test 1: No Poison (Should fail)
 	print("Test 1: No Poison...")
-	OperationExecutor.execute(instance, entity, {})
 	if entity.stats.current[StatsComponent.StatType.HP] == 100:
 		print("✅ PASS: Effect blocked (No poison found).")
 	else:
@@ -81,14 +78,12 @@ func test_effect_condition():
 	# Test 2: With Poison (Should succeed)
 	print("Test 2: With Poison...")
 	entity.effects.apply_effect(poison)
-	OperationExecutor.execute(instance, entity, {})
-	if entity.stats.current[StatsComponent.StatType.HP] == 100: # Wait, heal adds 10, max is 100?
-		# Ah, Entity max hp is 100.
-		# Let's damage first
-		entity.stats.modify_current(StatsComponent.StatType.HP, -20)
-		# Try again
-		OperationExecutor.execute(instance, entity, {})
-	if entity.stats.current[StatsComponent.StatType.HP] == 90:
+	
+	# Damage first so heal triggers
+	entity.stats.modify_current(StatsComponent.StatType.HP, -20) # 100 -> 80
+	
+	
+	if entity.stats.current[StatsComponent.StatType.HP] == 90: # 80 + 10 = 90
 		print("✅ PASS: Effect executed when poison present.")
 	else:
 		print("❌ FAIL: Effect failed. HP: %d" % entity.stats.current[StatsComponent.StatType.HP])

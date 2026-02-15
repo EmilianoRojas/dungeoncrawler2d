@@ -102,7 +102,7 @@ func test_skill_application():
 	
 	var skill = Skill.new()
 	skill.skill_name = "Poison Stab"
-	skill.applied_effects.append(poison)
+	skill.on_hit_effects.append(poison)
 	
 	print("Target effects before: %d" % target.effects.effects.size())
 	SkillExecutor.execute(skill, caster, target)
