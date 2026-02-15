@@ -2,7 +2,13 @@ class_name OperationExecutor
 extends Object
 
 static func execute(instance: EffectInstance, owner: Entity, data: Dictionary) -> void:
-    # Proc Check
+    # 1. Condition Check
+    for condition in instance.resource.conditions:
+        if not _check_condition(condition, instance, owner, data):
+            # Condition failed, abort
+            return
+
+    # 2. Proc Check
     if instance.resource.proc_chance < 1.0:
         if randf() > instance.resource.proc_chance:
             return
@@ -21,6 +27,57 @@ static func execute(instance: EffectInstance, owner: Entity, data: Dictionary) -
 
         EffectResource.Operation.DEAL_DAMAGE_PERCENT_BACK:
             _thorns(instance, owner, data)
+
+static func _check_condition(cond: EffectCondition, instance: EffectInstance, owner: Entity, data: Dictionary) -> bool:
+    var target_entity: Entity = owner
+    
+    # Determine target based on condition settings
+    if cond.target == EffectCondition.TargetType.TARGET:
+        # Try to find "target" in data payload (common for combat events)
+        if data.has("target") and data["target"] is Entity:
+            target_entity = data["target"]
+        elif data.has("source") and data["source"] != owner:
+            # If we are the target of an attack, the "source" is our opponent
+            target_entity = data["source"]
+        else:
+            # Fallback or specific logic needed
+            pass
+    
+    if target_entity == null:
+        print("DEBUG: _check_condition target is null")
+        return false
+    
+    match cond.type:
+        EffectCondition.Type.HP_PERCENT_BELOW:
+            if not "stats" in target_entity: return false
+            # Fix: get_stat(HP) returns MAX HP (base + bonus). We need CURRENT HP.
+            var hp = target_entity.stats.current.get(StatsComponent.StatType.HP, 0)
+            var max_hp = target_entity.stats.get_stat(StatsComponent.StatType.MAX_HP)
+            var pct = float(hp) / max_hp if max_hp > 0 else 0.0
+            print("DEBUG: HP Condition: %f < %f ?" % [pct, cond.value])
+            return pct < cond.value
+            
+        EffectCondition.Type.HP_PERCENT_ABOVE:
+            if not "stats" in target_entity: return false
+            var hp = target_entity.stats.current.get(StatsComponent.StatType.HP, 0)
+            var max_hp = target_entity.stats.get_stat(StatsComponent.StatType.MAX_HP)
+            var pct = float(hp) / max_hp if max_hp > 0 else 0.0
+            return pct > cond.value
+            
+        EffectCondition.Type.HAS_EFFECT_ID:
+            if not "effects" in target_entity: return false
+            return target_entity.effects._find_instance(cond.string_value) != null
+            
+        EffectCondition.Type.IS_CRIT:
+             return data.get("is_crit", false)
+             
+        EffectCondition.Type.IS_KILL:
+             return data.get("is_kill", false) # or logic based on target dead
+             
+        EffectCondition.Type.CHANCE:
+             return randf() <= cond.value
+            
+    return true
 
 # 🧪 Implementaciones reales
 

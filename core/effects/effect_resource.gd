@@ -29,6 +29,7 @@ enum Operation {
 @export var value: float = 0.0
 @export var stat_type: int = -1
 @export var proc_chance: float = 1.0 # 0.0 to 1.0
+@export var conditions: Array[EffectCondition] = []
 
 enum StackRule {
 	ADD,        # Sum stacks, refresh duration
