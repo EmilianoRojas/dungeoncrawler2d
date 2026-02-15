@@ -6,6 +6,7 @@ enum Team {
 	ENEMY
 }
 
+var initialized: bool = false
 @export var team: Team = Team.ENEMY # Default to Enemy
 
 var stats: StatsComponent
@@ -13,11 +14,19 @@ var effects: EffectManager
 var skills: SkillManager
 
 func _ready() -> void:
+	if not initialized:
+		initialize()
+
+func initialize() -> void:
+	if initialized: return
+	
 	stats = StatsComponent.new()
 	effects = EffectManager.new(self)
 	skills = SkillManager.new(self)
+	
+	initialized = true
 
-# Helper to apply a class data resource (to be implemented later)
+
 func apply_class(class_data: Resource) -> void:
 	# class_data will be typed as ClassData later
 	if "base_stats" in class_data:

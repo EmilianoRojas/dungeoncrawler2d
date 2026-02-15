@@ -36,21 +36,21 @@ func _ready():
 	
 	# 5. Combat
 	print("Warrior uses Tackle on Goblin!")
-	print("Goblin HP before: %d" % goblin.stats.get_stat("hp"))
-	print("Warrior HP before: %d" % warrior.stats.get_stat("hp"))
+	print("Goblin HP before: %d" % goblin.stats.get_stat(StatsComponent.StatType.HP))
+	print("Warrior HP before: %d" % warrior.stats.get_stat(StatsComponent.StatType.HP))
 	
 	tackle.use(warrior, goblin)
 	
-	print("Goblin HP after: %d" % goblin.stats.get_stat("hp"))
-	print("Warrior HP after (expecting heal if damaged, but he was full): %d" % warrior.stats.get_stat("hp"))
+	print("Goblin HP after: %d" % goblin.stats.get_stat(StatsComponent.StatType.HP))
+	print("Warrior HP after (expecting heal if damaged, but he was full): %d" % warrior.stats.get_stat(StatsComponent.StatType.HP))
 	
 	# Let's damage warrior first to see heal works
 	print("\n--- Testing Heal ---")
-	warrior.stats.set_base_stat("hp", 50)
+	warrior.stats.set_base_stat(StatsComponent.StatType.HP, 50)
 	print("Warrior HP set to 50.")
 	print("Warrior attacks again...")
 	tackle.use(warrior, goblin)
-	print("Warrior HP after lifesteal (expect 50 + 7 [15*0.5 floor]): %d" % warrior.stats.get_stat("hp"))
+	print("Warrior HP after lifesteal (expect 50 + 7 [15*0.5 floor]): %d" % warrior.stats.get_stat(StatsComponent.StatType.HP))
 	
 	print("\nVerification Complete.")
 	get_tree().quit()

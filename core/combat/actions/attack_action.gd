@@ -4,7 +4,7 @@ extends Action
 var damage: int = 0
 var skill_reference: Skill
 
-func _init(p_source: Entity = null, p_target: Entity = null) -> void:
+func _init(p_source: Node = null, p_target: Node = null) -> void:
 	if p_source and p_target:
 		super (p_source, p_target)
 
@@ -17,10 +17,15 @@ func execute() -> void:
 	GlobalEventBus.dispatch("before_damage", {"source": source, "target": target})
 	
 	var damage = self.damage
-	if source.stats:
-		var strength = source.stats.get_stat("strength")
+	
+	var source_entity = source
+	var target_entity = target
+	
+	if source_entity and source_entity.get("stats"):
+		var strength = source_entity.stats.get_stat(StatsComponent.StatType.STRENGTH)
 		damage += strength
 		print("Checking Stats - Strength: %d. Total Damage: %d" % [strength, damage])
 	
-	CombatSystem.deal_damage(source, target, damage)
+	if source_entity and target_entity:
+		CombatSystem.deal_damage(source_entity, target_entity, damage)
 	GlobalEventBus.dispatch("after_damage", {"source": source, "target": target})

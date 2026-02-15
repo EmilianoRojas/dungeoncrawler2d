@@ -5,9 +5,9 @@ extends Node
 # { skill_resource: current_cooldown_turns }
 var cooldowns: Dictionary = {}
 var known_skills: Array[Skill] = []
-var owner_entity: Entity
+var owner_entity: Node
 
-func _init(p_owner: Entity) -> void:
+func _init(p_owner: Node) -> void:
 	owner_entity = p_owner
 
 func learn_skill(skill: Skill) -> void:

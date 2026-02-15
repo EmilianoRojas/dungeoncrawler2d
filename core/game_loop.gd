@@ -35,7 +35,7 @@ func _ready() -> void:
 	player_entity = Entity.new()
 	player_entity.name = "Player"
 	player_entity.team = Entity.Team.PLAYER
-	player_entity._ready()
+	player_entity.initialize()
 	
 	# Load Warrior Class
 	var warrior_class = load("res://data/classes/warrior.tres")
@@ -45,12 +45,12 @@ func _ready() -> void:
 	else:
 		print("Error: Could not load Warrior class!")
 	
-	# Initialize Player Stats
-	# Initialize Player Stats
+	# Initialize Player Stats (Manual override or just ensure class applied)
 	player_entity.stats.set_base_stat(StatsComponent.StatType.HP, 100)
 	player_entity.stats.set_base_stat(StatsComponent.StatType.MAX_HP, 100)
 	player_entity.stats.set_base_stat(StatsComponent.StatType.STRENGTH, 10)
 	player_entity.stats.set_base_stat(StatsComponent.StatType.SPEED, 10)
+	
 	player_entity.stats.finalize_initialization()
 	
 	
@@ -84,7 +84,7 @@ func _on_ui_skill_activated(skill: Skill) -> void:
 	if current_state != State.COMBAT: return
 	
 	# For prototype, assume single target (the first enemy)
-	var target = turn_manager.entities[1] if turn_manager.entities.size() > 1 else null
+	var target = turn_manager.get_first_alive_enemy()
 	
 	if target:
 		var action = AttackAction.new(player_entity, target)
@@ -110,19 +110,7 @@ func _check_room_event(node: MapNode) -> void:
 func _start_combat(node: MapNode) -> void:
 	current_state = State.COMBAT
 	
-	var enemy = Entity.new()
-	enemy.name = "Goblin"
-	enemy.team = Entity.Team.ENEMY
-	enemy._ready()
-	enemy.stats.set_base_stat(StatsComponent.StatType.STRENGTH, 5)
-	enemy.stats.set_base_stat(StatsComponent.StatType.SPEED, 3)
-	enemy.stats.set_base_stat(StatsComponent.StatType.HP, 30) # Give some HP
-	enemy.stats.set_base_stat(StatsComponent.StatType.MAX_HP, 30)
-	enemy.stats.finalize_initialization()
-	
-	var bite = Skill.new()
-	bite.skill_name = "Bite"
-	enemy.skills.learn_skill(bite)
+	var enemy = EnemyFactory.create_goblin()
 	
 	turn_manager.start_battle(player_entity, [enemy])
 	game_ui.initialize_battle(player_entity, [enemy])

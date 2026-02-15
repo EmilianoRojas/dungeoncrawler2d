@@ -39,6 +39,28 @@ func start_battle(player: Entity, enemies: Array[Entity]) -> void:
 	# Start basic loop
 	start_new_turn()
 
+# --- Targeting Helpers ---
+
+func get_first_alive_enemy() -> Entity:
+	for e in entities:
+		if e.team == Entity.Team.ENEMY and e.stats.get_stat(StatsComponent.StatType.HP) > 0:
+			return e
+	return null
+
+func get_alive_enemies() -> Array[Entity]:
+	var result: Array[Entity] = []
+	for e in entities:
+		if e.team == Entity.Team.ENEMY and e.stats.get_stat(StatsComponent.StatType.HP) > 0:
+			result.append(e)
+	return result
+
+func get_alive_allies(entity: Entity) -> Array[Entity]:
+	var result: Array[Entity] = []
+	for e in entities:
+		if e.team == entity.team and e.stats.get_stat(StatsComponent.StatType.HP) > 0:
+			result.append(e)
+	return result
+
 func start_new_turn() -> void:
 	turn_count += 1
 	print("\n=== Turn %d Start ===" % turn_count)
@@ -73,7 +95,7 @@ func _process_decision_phase() -> void:
 			var context = {"target": player_entity}
 			
 			# Check if enemy is alive before acting
-			if entity.stats.get_stat("hp") <= 0: continue
+			if entity.stats.get_stat(StatsComponent.StatType.HP) <= 0: continue
 			
 			var action = entity.decide_action(context)
 			if action:
@@ -127,7 +149,7 @@ func _on_entity_died(data: Dictionary) -> void:
 	
 	# Check if enemies remain
 	for e in entities:
-		if e.team == Entity.Team.ENEMY and e.stats.get_stat("hp") > 0:
+		if e.team == Entity.Team.ENEMY and e.stats.get_stat(StatsComponent.StatType.HP) > 0:
 			return
 	
 	print("VICTORY!")

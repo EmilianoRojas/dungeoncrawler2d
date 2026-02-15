@@ -1,7 +1,7 @@
 class_name CombatSystem
 extends Object
 
-static func deal_damage(source: Entity, target: Entity, amount: int) -> void:
+static func deal_damage(source: Node, target: Node, amount: int) -> void:
 	var data = {
 		"source": source,
 		"target": target,
@@ -29,10 +29,10 @@ static func deal_damage(source: Entity, target: Entity, amount: int) -> void:
 	# Notify UI/GameLoop
 	GlobalEventBus.dispatch("damage_dealt", data)
 
-static func apply_damage_to_stats(target: Entity, amount: int) -> void:
-	var current_hp = target.stats.get_stat("hp")
+static func apply_damage_to_stats(target: Node, amount: int) -> void:
+	var current_hp = target.stats.get_stat(StatsComponent.StatType.HP)
 	var new_hp = current_hp - amount
-	target.stats.set_base_stat("hp", new_hp) # Simplified: modifying base for now, usually HP is current_value vs max_value
+	target.stats.set_base_stat(StatsComponent.StatType.HP, new_hp) # Simplified: modifying base for now, usually HP is current_value vs max_value
 	
 	if new_hp <= 0:
 		target.effects.dispatch("on_death", {})

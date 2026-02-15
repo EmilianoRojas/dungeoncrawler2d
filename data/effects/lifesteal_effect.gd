@@ -15,5 +15,5 @@ func on_event(event_name: String, data: Dictionary) -> void:
             print("Lifesteal triggered! Healing %d" % heal_amount)
             
             # Implementation of heal:
-            var current_hp = source.stats.get_stat("hp")
-            source.stats.set_base_stat("hp", current_hp + heal_amount)
+            var current_hp = source.stats.get_stat(StatsComponent.StatType.HP)
+            source.stats.set_base_stat(StatsComponent.StatType.HP, current_hp + heal_amount)

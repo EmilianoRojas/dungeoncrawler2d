@@ -55,8 +55,8 @@ func update_hp(entity: Entity, is_player: bool) -> void:
 	# Ensure stats exist
 	if not entity.stats: return
 	
-	var current = entity.stats.get_stat("hp")
-	var max_hp = entity.stats.get_stat("max_hp")
+	var current = entity.stats.get_stat(StatsComponent.StatType.HP)
+	var max_hp = entity.stats.get_stat(StatsComponent.StatType.MAX_HP)
 	
 	if is_player:
 		player_hp.update_health(current, max_hp)
