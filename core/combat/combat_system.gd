@@ -20,6 +20,13 @@ static func deal_damage(source: Entity, target: Entity, amount: int) -> void:
 	# Let's keep a death check helper or do it inline
 	var current_hp = target.stats.current.get(StatsComponent.StatType.HP, 0)
 	if current_hp <= 0:
+		# Dispatch ON_KILL for the source (attacker)
+		if source and source != target:
+			source.effects.dispatch(EffectResource.Trigger.ON_KILL, {
+				"source": source,
+				"target": target
+			})
+			
 		target.effects.dispatch(EffectResource.Trigger.ON_DEATH, {})
 		# GlobalEventBus for death? Keeping legacy if needed.
 		# GlobalEventBus.dispatch("entity_died", {"entity": target}) 
@@ -31,3 +38,17 @@ static func deal_damage(source: Entity, target: Entity, amount: int) -> void:
 	# Log/UI events
 	GlobalEventBus.dispatch("combat_log", {"message": "%s attacks %s for %d damage" % [source.name, target.name, data.damage]}) 
 	GlobalEventBus.dispatch("damage_dealt", data)
+
+static func heal(target: Entity, amount: int) -> void:
+	if not target or amount <= 0: return
+
+	# Apply Heal
+	target.stats.modify_current(StatsComponent.StatType.HP, amount)
+	
+	# Dispatch ON_HEAL_RECEIVED
+	target.effects.dispatch(EffectResource.Trigger.ON_HEAL_RECEIVED, {
+		"target": target,
+		"amount": amount
+	})
+	
+	GlobalEventBus.dispatch("combat_log", {"message": "%s healed for %d HP" % [target.name, amount]})

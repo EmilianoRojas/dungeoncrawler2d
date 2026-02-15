@@ -5,7 +5,6 @@ func _init():
 	test_lifesteal()
 	test_stacking()
 	test_duration()
-	quit()
 
 func test_lifesteal():
 	print("\n--- Testing Lifesteal Effect ---")

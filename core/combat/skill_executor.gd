@@ -6,6 +6,17 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 		push_error("SkillExecutor: Invalid arguments")
 		return
 
+	# 1. Trigger ON_SKILL_CAST
+	source.effects.dispatch(EffectResource.Trigger.ON_SKILL_CAST, {
+		"source": source,
+		"target": target,
+		"skill": skill
+	})
+
 	var damage = FormulaCalculator.calculate_damage(skill, source)
 	
 	CombatSystem.deal_damage(source, target, damage)
+	
+	# 2. Apply Skill Effects
+	for effect in skill.applied_effects:
+		target.effects.apply_effect(effect)

@@ -2,6 +2,10 @@ class_name OperationExecutor
 extends Object
 
 static func execute(instance: EffectInstance, owner: Entity, data: Dictionary) -> void:
+    # Proc Check
+    if instance.resource.proc_chance < 1.0:
+        if randf() > instance.resource.proc_chance:
+            return
 
     var effect = instance.resource
     match effect.operation:
