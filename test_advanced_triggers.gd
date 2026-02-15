@@ -35,7 +35,9 @@ func test_on_kill():
 	
 	# Kill the victim
 	print("dealing fatal damage...")
-	CombatSystem.deal_damage(attacker, victim, 20)
+	var context = CombatContext.new(attacker, victim)
+	context.damage = 20
+	CombatSystem.deal_damage(context)
 	
 	var final_hp = attacker.stats.current[StatsComponent.StatType.HP]
 	print("Attacker HP after kill: %d" % final_hp)

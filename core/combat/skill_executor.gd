@@ -11,8 +11,9 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 	source.effects.dispatch(EffectResource.Trigger.ON_SKILL_CAST, context)
 
 	var damage = FormulaCalculator.calculate_damage(skill, source)
+	context.damage = damage
 	
-	CombatSystem.deal_damage(source, target, damage)
+	CombatSystem.deal_damage(context)
 	
 	# 2. Apply Skill Effects
 	

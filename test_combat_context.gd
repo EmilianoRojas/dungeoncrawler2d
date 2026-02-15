@@ -35,7 +35,9 @@ func test_context_flow():
 	
 	# 1. Non-Crit Attack
 	print("Test 1: Normal Attack (Should NOT trigger reaction)...")
-	CombatSystem.deal_damage(attacker, defender, 10)
+	var normal_ctx = CombatContext.new(attacker, defender)
+	normal_ctx.damage = 10
+	CombatSystem.deal_damage(normal_ctx)
 	
 	if defender.stats.current[StatsComponent.StatType.HP] == 90: # 100 - 10
 		print("✅ PASS: Normal attack passed, reaction blocked.")

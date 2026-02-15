@@ -39,7 +39,9 @@ func test_lifesteal():
 	# Execute Combat
 	var damage_amount = 20
 	print("Dealing %d damage..." % damage_amount)
-	CombatSystem.deal_damage(attacker, defender, damage_amount)
+	var context = CombatContext.new(attacker, defender)
+	context.damage = damage_amount
+	CombatSystem.deal_damage(context)
 	
 	# Assertions
 	var expected_attacker_hp = 50 + int(damage_amount * 0.5) # 50 + 10 = 60
