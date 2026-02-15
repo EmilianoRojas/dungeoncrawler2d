@@ -68,7 +68,7 @@ func start_new_turn() -> void:
 	# 1. Tick Cooldowns & Effects
 	for e in entities:
 		e.skills.tick_cooldowns()
-		# e.effects.tick_durations() # Todo
+		e.effects.tick_all()
 	
 	_set_phase(Phase.DECISION)
 	_process_decision_phase()

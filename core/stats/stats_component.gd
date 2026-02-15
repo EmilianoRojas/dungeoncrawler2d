@@ -35,6 +35,7 @@ func get_stat(stat_type: StatType) -> int:
 func set_base_stat(stat_type: StatType, value: int) -> void:
 	base[stat_type] = value
 
+
 func add_bonus(stat_type: StatType, value: int) -> void:
 	bonus[stat_type] = bonus.get(stat_type, 0) + value
 
@@ -43,6 +44,17 @@ func remove_bonus(stat_type: StatType, value: int) -> void:
 		bonus[stat_type] -= value
 		if bonus[stat_type] <= 0:
 			bonus.erase(stat_type)
+
+func modify_current(stat_type: StatType, amount: int) -> void:
+	var current_val = current.get(stat_type, 0)
+	current[stat_type] = current_val + amount
+	
+	# Optional: Clamp logic if needed, e.g. HP vs MAX_HP
+	if stat_type == StatType.HP:
+		var max_hp = get_stat(StatType.MAX_HP)
+		if max_hp > 0:
+			current[stat_type] = clampi(current[stat_type], 0, max_hp)
+
 
 static func get_stat_type_from_string(stat_name: String) -> int:
 	match stat_name.to_lower():

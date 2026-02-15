@@ -16,8 +16,11 @@ func _ready():
 	
 	# 2. Add Lifesteal
 	print("Adding Lifesteal...")
-	var lifesteal = LifestealEffect.new()
-	lifesteal.percent = 0.5
+	var lifesteal = EffectResource.new()
+	lifesteal.effect_id = "lifesteal"
+	lifesteal.trigger = EffectResource.Trigger.ON_DAMAGE_DEALT
+	lifesteal.operation = EffectResource.Operation.HEAL_PERCENT
+	lifesteal.value = 0.5
 	warrior.effects.add_effect(lifesteal)
 	
 	# 3. Setup Enemy
