@@ -45,11 +45,17 @@ enum Operation {
 
 	# Special
 	CONVERT_TO_TRUE_DAMAGE,
-	STORE_DAMAGE
+	STORE_DAMAGE,
+	
+	# Stat Modifiers
+	ADD_STAT_MODIFIER
 }
 
 @export var trigger: Trigger
 @export var operation: Operation
+
+# For ADD_STAT_MODIFIER
+@export var stat_modifier: StatModifier
 
 @export var value: float = 0.0
 @export var stat_type: StringName = ""

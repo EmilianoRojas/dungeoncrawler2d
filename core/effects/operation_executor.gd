@@ -57,8 +57,20 @@ static func execute(instance: EffectInstance, owner: Entity, context: CombatCont
 		EffectResource.Operation.STORE_DAMAGE:
 			context.stored_damage += context.damage
 
-	# 5. Final Safety Clamp (Prevent negative damage in pipeline)
+	# 5. Final Safety Clamp (Prevent negative damage in pipeline for damage ops)
+	# (Only relevant if we modified damage)
+	
+	# --- STAT MODIFIERS ---
+	match effect.operation:
+		EffectResource.Operation.ADD_STAT_MODIFIER:
+			if "stats" in owner and effect.stat_modifier:
+				# Pass the effect_id as source_id override so we can remove it later
+				owner.stats.add_modifier(effect.stat_modifier, effect.effect_id)
+				# print("Applied Stat Modifier from Effect: %s" % effect.effect_id)
+
+	# 5b. Final Safety Clamp again, just in case
 	context.damage = max(0, context.damage)
+
 
 
 static func _check_condition(cond: EffectCondition, instance: EffectInstance, owner: Entity, context: CombatContext) -> bool:

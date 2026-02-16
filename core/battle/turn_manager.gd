@@ -69,6 +69,8 @@ func start_new_turn() -> void:
 	for e in entities:
 		e.skills.tick_cooldowns()
 		e.effects.tick_all()
+		if "stats" in e:
+			e.stats.tick_modifiers()
 	
 	_set_phase(Phase.DECISION)
 	_process_decision_phase()
