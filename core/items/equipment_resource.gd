@@ -4,6 +4,7 @@ extends Resource
 @export var id: StringName
 @export var display_name: String
 @export var slot: EquipmentSlot.Type
+@export_enum("Common", "Rare", "Epic", "Legendary") var rarity: String = "Common"
 
 # A) Stat Modifiers (Applied once on equip)
 @export var equip_effects: Array[EffectResource]

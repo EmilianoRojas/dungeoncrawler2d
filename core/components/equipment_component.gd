@@ -82,6 +82,9 @@ func equip_inventory_item(item: InventoryItem) -> void:
 	# Track the specific instance
 	var slot = item.equipment.slot
 	equipped_instances[slot] = item
+	
+	# Update item state
+	item.equipped_slot = _get_source_id(slot)
 
 func unequip(slot: EquipmentSlot.Type) -> void:
 	if not equipped_items.has(slot):
@@ -100,6 +103,10 @@ func unequip(slot: EquipmentSlot.Type) -> void:
 	# 3. Remove Passives
 	if passive_effect_component:
 		passive_effect_component.remove_from_source(source_id)
+	
+	var item = equipped_instances[slot]
+	if item:
+		item.equipped_slot = ""
 	
 	equipped_items.erase(slot)
 	equipped_instances.erase(slot)

@@ -9,8 +9,14 @@ signal item_removed(item: InventoryItem)
 # The list of items currently in the inventory
 var items: Array[InventoryItem] = []
 
+@export var max_slots: int = 20
+
 # Adds a new item based on an EquipmentResource definition
+# Returns the created item, or null if inventory is full
 func add_item(equipment_res: EquipmentResource) -> InventoryItem:
+	if items.size() >= max_slots:
+		return null
+		
 	var item = InventoryItem.new(equipment_res)
 	items.append(item)
 	item_added.emit(item)
@@ -18,6 +24,9 @@ func add_item(equipment_res: EquipmentResource) -> InventoryItem:
 
 # Adds an existing InventoryItem instance (e.g. from a save or trade)
 func add_existing_item(item: InventoryItem) -> void:
+	if items.size() >= max_slots:
+		return
+		
 	if not item in items:
 		items.append(item)
 		item_added.emit(item)
