@@ -7,8 +7,12 @@ extends Node
 # OperationExecutor is a static class, so we don't need a reference instance usually, 
 # but if it needs state, we might need one. Based on prior view, it's static.
 
-# Slot -> EquipmentResource
+# Slot -> EquipmentResource (Data)
 var equipped_items: Dictionary = {}
+
+# Slot -> InventoryItem (Runtime Instance)
+# This allows us to track unique item data (e.g. durability, enchants) for equipped items.
+var equipped_instances: Dictionary = {}
 
 var owner_entity: Entity
 
@@ -67,6 +71,18 @@ func equip(item: EquipmentResource) -> void:
 			
 	print("Equipped %s to %s" % [item.display_name, EquipmentSlot.Type.keys()[slot]])
 
+func equip_inventory_item(item: InventoryItem) -> void:
+	if not item or not item.equipment:
+		push_error("Cannot equip invalid InventoryItem")
+		return
+		
+	# Equip the base resource (handles stats, skills, passives)
+	equip(item.equipment)
+	
+	# Track the specific instance
+	var slot = item.equipment.slot
+	equipped_instances[slot] = item
+
 func unequip(slot: EquipmentSlot.Type) -> void:
 	if not equipped_items.has(slot):
 		return
@@ -86,6 +102,7 @@ func unequip(slot: EquipmentSlot.Type) -> void:
 		passive_effect_component.remove_from_source(source_id)
 	
 	equipped_items.erase(slot)
+	equipped_instances.erase(slot)
 	print("Unequipped slot %s" % EquipmentSlot.Type.keys()[slot])
 
 func _get_source_id(slot: EquipmentSlot.Type) -> StringName:
