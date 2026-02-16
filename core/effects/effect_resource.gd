@@ -28,18 +28,31 @@ enum Trigger {
 }
 
 enum Operation {
-	HEAL_PERCENT,
-	HEAL_FLAT,
-	MODIFY_STAT_PERCENT,
-	MODIFY_STAT_FLAT,
-	DEAL_DAMAGE_PERCENT_BACK
+	# Offensive
+	ADD_DAMAGE,
+	ADD_DAMAGE_PERCENT,
+	MULTIPLY_DAMAGE,
+	SET_DAMAGE,
+
+	# Defensive
+	REDUCE_DAMAGE_FLAT,
+	REDUCE_DAMAGE_PERCENT,
+	ABSORB_DAMAGE,
+
+	# Clamps
+	CLAMP_MIN_DAMAGE,
+	CLAMP_MAX_DAMAGE,
+
+	# Special
+	CONVERT_TO_TRUE_DAMAGE,
+	STORE_DAMAGE
 }
 
 @export var trigger: Trigger
 @export var operation: Operation
 
 @export var value: float = 0.0
-@export var stat_type: int = -1
+@export var stat_type: StringName = ""
 @export var proc_chance: float = 1.0 # 0.0 to 1.0
 @export var conditions: Array[EffectCondition] = []
 

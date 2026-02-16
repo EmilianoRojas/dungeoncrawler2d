@@ -30,16 +30,8 @@ func initialize() -> void:
 func apply_class(class_data: ClassData) -> void:
 	# 1. Apply Base Stats
 	for key in class_data.base_stats:
-		var enum_key = -1
-		
-		# Handle both String keys (from JSON/Editor) and int keys (direct enum usage)
-		if key is String:
-			enum_key = StatsComponent.get_stat_type_from_string(key)
-		elif key is int:
-			enum_key = key
-			
-		if enum_key != -1:
-			stats.set_base_stat(enum_key, class_data.base_stats[key])
+		if key is StringName:
+			stats.set_base_stat(StringName(key), class_data.base_stats[key])
 	
 	stats.finalize_initialization()
 	
@@ -48,7 +40,7 @@ func apply_class(class_data: ClassData) -> void:
 		skills.learn_skill(s)
 
 func is_alive() -> bool:
-	return stats.current.get(StatsComponent.StatType.HP, 0) > 0
+	return stats.current.get(StatTypes.HP, 0) > 0
 
 func decide_action(context: Dictionary = {}) -> Action:
 	# Virtual method. 

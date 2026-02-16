@@ -8,6 +8,9 @@ var damage: int = 0
 var is_crit: bool = false
 var is_kill: bool = false
 var heal_amount: int = 0
+var context_data: Dictionary = {}
+var ignore_defense: bool = false
+var stored_damage: int = 0
 var effect_instance: EffectInstance = null # If triggered by an effect
 
 # Optional/Extra data

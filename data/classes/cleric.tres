@@ -7,10 +7,10 @@
 script = ExtResource("1_class")
 title = "Cleric"
 base_stats = {
-2: 6,
-4: 8,
-1: 100,
-0: 100,
-3: 6
+"strength": 6,
+"defense": 8,
+"max_hp": 100,
+"hp": 100,
+"speed": 6
 }
 starting_skills = Array[Resource]([ExtResource("2_skill1")])

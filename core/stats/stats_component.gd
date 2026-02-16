@@ -1,23 +1,14 @@
 class_name StatsComponent
 extends Resource
 
+# Base stats (e.g., {StatTypes.STRENGTH: 10, StatTypes.MAX_HP: 100})
+@export var base: Dictionary[StringName, int] = {}
 
-enum StatType {
-	HP,
-	MAX_HP,
-	STRENGTH,
-	SPEED,
-	DEFENSE
-}
+# Bonus stats from equipment/buffs (e.g., {StatTypes.STRENGTH: 2})
+var bonus: Dictionary[StringName, int] = {}
 
-# Base stats (e.g., {StatType.STRENGTH: 10, StatType.MAX_HP: 100})
-@export var base: Dictionary = {}
-
-# Bonus stats from equipment/buffs (e.g., {StatType.STRENGTH: 2})
-var bonus: Dictionary = {}
-
-# Current temporary stats (e.g., {StatType.HP: 50})
-var current: Dictionary = {}
+# Current temporary stats (e.g., {StatTypes.HP: 50})
+var current: Dictionary[StringName, int] = {}
 
 func finalize_initialization() -> void:
 	initialize_from_base()
@@ -27,40 +18,40 @@ func initialize_from_base() -> void:
 	for key in base:
 		current[key] = base[key]
 
-func get_stat(stat_type: StatType) -> int:
-	var base_val = base.get(stat_type, 0)
+const DEFAULTS = {
+	StatTypes.HP: 10,
+	StatTypes.MAX_HP: 10,
+	StatTypes.STRENGTH: 5,
+	StatTypes.SPEED: 5,
+	StatTypes.DEFENSE: 0
+}
+
+func get_stat(stat_type: StringName) -> int:
+	var base_val = base.get(stat_type, DEFAULTS.get(stat_type, 0))
 	var bonus_val = bonus.get(stat_type, 0)
 	return base_val + bonus_val
 
-func set_base_stat(stat_type: StatType, value: int) -> void:
+func get_current(stat_type: StringName) -> int:
+	return current.get(stat_type, DEFAULTS.get(stat_type, 0))
+
+func set_base_stat(stat_type: StringName, value: int) -> void:
 	base[stat_type] = value
 
-
-func add_bonus(stat_type: StatType, value: int) -> void:
+func add_bonus(stat_type: StringName, value: int) -> void:
 	bonus[stat_type] = bonus.get(stat_type, 0) + value
 
-func remove_bonus(stat_type: StatType, value: int) -> void:
+func remove_bonus(stat_type: StringName, value: int) -> void:
 	if bonus.has(stat_type):
 		bonus[stat_type] -= value
 		if bonus[stat_type] <= 0:
 			bonus.erase(stat_type)
 
-func modify_current(stat_type: StatType, amount: int) -> void:
-	var current_val = current.get(stat_type, 0)
+func modify_current(stat_type: StringName, amount: int) -> void:
+	var current_val = current.get(stat_type, DEFAULTS.get(stat_type, 0))
 	current[stat_type] = current_val + amount
 	
 	# Optional: Clamp logic if needed, e.g. HP vs MAX_HP
-	if stat_type == StatType.HP:
-		var max_hp = get_stat(StatType.MAX_HP)
+	if stat_type == StatTypes.HP:
+		var max_hp = get_stat(StatTypes.MAX_HP)
 		if max_hp > 0:
 			current[stat_type] = clampi(current[stat_type], 0, max_hp)
-
-
-static func get_stat_type_from_string(stat_name: String) -> int:
-	match stat_name.to_lower():
-		"hp": return StatType.HP
-		"max_hp": return StatType.MAX_HP
-		"strength": return StatType.STRENGTH
-		"speed": return StatType.SPEED
-		"defense": return StatType.DEFENSE
-	return -1

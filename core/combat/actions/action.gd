@@ -11,7 +11,7 @@ func _init(p_source: Node, p_target: Node) -> void:
 	target = p_target
 	var source_entity = source
 	if source_entity and source_entity.get("stats"):
-		speed = source_entity.stats.get_stat(StatsComponent.StatType.SPEED)
+		speed = source_entity.stats.get_stat(StatTypes.SPEED)
 
 func execute() -> void:
 	pass

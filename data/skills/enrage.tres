@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Skill" load_steps=3 format=3 uid="uid://enrage_skill"]
+
+[ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
+[ext_resource type="Resource" uid="uid://rage_effect" path="res://data/effects/rage.tres" id="2_effect"]
+
+[resource]
+script = ExtResource("1_skill")
+skill_name = "Enrage"
+scaling_type = 0
+scaling_stat = &"strength"
+scaling_percent = 1.0
+on_cast_effects = Array[Resource]([ExtResource("2_effect")])
+on_hit_effects = Array[Resource]([])
+base_power = 0
+max_cooldown = 5

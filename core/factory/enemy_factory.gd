@@ -9,10 +9,10 @@ static func create_goblin() -> Entity:
 	enemy.initialize()
 	
 	# 2. Set Stats
-	enemy.stats.set_base_stat(StatsComponent.StatType.HP, 30)
-	enemy.stats.set_base_stat(StatsComponent.StatType.MAX_HP, 30)
-	enemy.stats.set_base_stat(StatsComponent.StatType.STRENGTH, 5)
-	enemy.stats.set_base_stat(StatsComponent.StatType.SPEED, 3)
+	enemy.stats.set_base_stat(StatTypes.HP, 30)
+	enemy.stats.set_base_stat(StatTypes.MAX_HP, 30)
+	enemy.stats.set_base_stat(StatTypes.STRENGTH, 5)
+	enemy.stats.set_base_stat(StatTypes.SPEED, 3)
 	
 	# 3. Finalize Stats (Calc current values)
 	enemy.stats.finalize_initialization()

@@ -24,16 +24,37 @@ static func deal_damage(context: CombatContext) -> void:
 	target.effects.dispatch(EffectResource.Trigger.ON_PRE_DAMAGE_APPLY, context)
 
 	# ===== APPLY DAMAGE =====
-	target.stats.modify_current(StatsComponent.StatType.HP, -context.damage)
+	target.stats.modify_current(StatTypes.HP, -context.damage)
 
 	# ===== POST DAMAGE =====
 	if source: source.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_DEALT, context)
 	target.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_TAKEN, context)
 
 	# Log/UI events
-	# For global bus, we might still need a dict or update it to handle objects
-	# GlobalEventBus.dispatch("combat_log", {"message": "%s attacks %s for %d damage" % [source.name, target.name, context.damage]}) 
-	# GlobalEventBus.dispatch("damage_dealt", context) # Passing context object might need GlobalBus update
+	GlobalEventBus.dispatch("combat_log", {
+		"message": "%s attacks %s for %d damage" % [source.name if source else "Unknown", target.name, context.damage]
+	}) 
+	
+	GlobalEventBus.dispatch("damage_dealt", {
+		"source": source,
+		"target": target,
+		"damage": context.damage,
+		"is_crit": context.is_crit,
+		"is_kill": context.is_kill
+	})
+	
+	# ===== DEATH CHECK =====
+	var current_hp = target.stats.get_current(StatTypes.HP)
+	if current_hp <= 0:
+		context.is_kill = true
+		
+		# Triggers
+		if source and source != target:
+			source.effects.dispatch(EffectResource.Trigger.ON_KILL, context)
+		target.effects.dispatch(EffectResource.Trigger.ON_DEATH, context)
+		
+		# Global Event
+		GlobalEventBus.dispatch("entity_died", {"entity": target, "killer": source})
 
 static func heal(context: CombatContext) -> void:
 	var target = context.target
@@ -41,9 +62,9 @@ static func heal(context: CombatContext) -> void:
 	if not target or amount <= 0: return
 
 	# Apply Heal
-	target.stats.modify_current(StatsComponent.StatType.HP, amount)
+	target.stats.modify_current(StatTypes.HP, amount)
 	
 	# Dispatch ON_HEAL_RECEIVED
 	target.effects.dispatch(EffectResource.Trigger.ON_HEAL_RECEIVED, context)
 	
-	# GlobalEventBus.dispatch("combat_log", {"message": "%s healed for %d HP" % [target.name, amount]})
+	GlobalEventBus.dispatch("combat_log", {"message": "%s healed for %d HP" % [target.name, amount]})

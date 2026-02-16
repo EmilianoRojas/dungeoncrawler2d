@@ -10,9 +10,10 @@ enum ScalingType {
 
 # Scaling
 @export var scaling_type: ScalingType = ScalingType.STAT_PERCENT
-@export var scaling_stat: StatsComponent.StatType = StatsComponent.StatType.STRENGTH
+@export var scaling_stat: StringName = StatTypes.STRENGTH
 @export var scaling_percent: float = 1.0 # 1.0 = 100%
-@export var applied_effects: Array[EffectResource] = []
+@export var on_cast_effects: Array[EffectResource] = [] # Self
+@export var on_hit_effects: Array[EffectResource] = []  # Target
 # Base
 @export var base_power: int = 0
 @export var max_cooldown: int = 0 # in turns
