@@ -4,6 +4,7 @@ extends Resource
 @export var effect_id: StringName = "" # e.g. "lifesteal", "burn"
 
 enum Trigger {
+
 	# --- SKILL FLOW ---
 	ON_SKILL_CAST,
 
@@ -48,7 +49,10 @@ enum Operation {
 	STORE_DAMAGE,
 	
 	# Stat Modifiers
-	ADD_STAT_MODIFIER
+	ADD_STAT_MODIFIER,
+
+	# Resources
+	HEAL
 }
 
 @export var trigger: Trigger

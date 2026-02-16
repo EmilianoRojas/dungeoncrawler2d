@@ -15,6 +15,11 @@ func learn_skill(skill: Skill) -> void:
 		known_skills.append(skill)
 		cooldowns[skill] = 0
 
+func unlearn_skill(skill: Skill) -> void:
+	if known_skills.has(skill):
+		known_skills.erase(skill)
+		cooldowns.erase(skill)
+
 func is_skill_ready(skill: Skill) -> bool:
 	return cooldowns.get(skill, 0) <= 0
 

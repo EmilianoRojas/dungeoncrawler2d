@@ -13,6 +13,11 @@ var stats: StatsComponent
 var effects: EffectManager
 var skills: SkillManager
 
+# New Systems
+var equipment: EquipmentComponent
+var skill_component: SkillComponent
+var passives: PassiveEffectComponent
+
 func _ready() -> void:
 	if not initialized:
 		initialize()
@@ -23,6 +28,16 @@ func initialize() -> void:
 	stats = StatsComponent.new()
 	effects = EffectManager.new(self)
 	skills = SkillManager.new(self)
+	
+	# Initialize new components
+	skill_component = SkillComponent.new(self) # Pass self for SkillManager integration
+	passives = PassiveEffectComponent.new()
+	equipment = EquipmentComponent.new(self)
+	
+	# Wire dependencies
+	equipment.stats_component = stats
+	equipment.skill_component = skill_component
+	equipment.passive_effect_component = passives
 	
 	initialized = true
 

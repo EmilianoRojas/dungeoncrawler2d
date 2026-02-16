@@ -4,7 +4,11 @@ extends RefCounted
 var source: Entity
 var target: Entity
 var skill: Skill
+# Optional source ID override for stat modifiers
+var custom_source_id: StringName = ""
+
 var damage: int = 0
+
 var is_crit: bool = false
 var is_kill: bool = false
 var heal_amount: int = 0

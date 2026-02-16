@@ -71,6 +71,22 @@ func start_new_turn() -> void:
 		e.effects.tick_all()
 		if "stats" in e:
 			e.stats.tick_modifiers()
+			
+		# Trigger Passives: ON_TURN_START
+		if "passives" in e and e.passives:
+			var passives_list = e.passives.get_passives_by_trigger(EffectResource.Trigger.ON_TURN_START)
+			for p_data in passives_list:
+				var effect = p_data.effect
+				var source_id = p_data.source
+				
+				# Execute Passive
+				var instance = EffectInstance.new(effect)
+				var context = CombatContext.new()
+				context.source = e
+				context.target = e # Usually self-targeting for turn start (regen, etc)
+				context.custom_source_id = source_id
+				
+				OperationExecutor.execute(instance, e, context)
 	
 	_set_phase(Phase.DECISION)
 	_process_decision_phase()
@@ -132,6 +148,22 @@ func _process_resolution_phase() -> void:
 		# Execute next
 		action_queue.process_next()
 	
+	# Trigger Passives: ON_TURN_END
+	for e in entities:
+		if "passives" in e and e.passives:
+			var passives_list = e.passives.get_passives_by_trigger(EffectResource.Trigger.ON_TURN_END)
+			for p_data in passives_list:
+				var effect = p_data.effect
+				var source_id = p_data.source
+				
+				var instance = EffectInstance.new(effect)
+				var context = CombatContext.new()
+				context.source = e
+				context.target = e
+				context.custom_source_id = source_id
+				
+				OperationExecutor.execute(instance, e, context)
+
 	# Only start new turn if battle isn't over
 	if current_phase != Phase.WIN and current_phase != Phase.LOSS:
 		turn_processing_end.emit()

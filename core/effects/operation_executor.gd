@@ -64,9 +64,24 @@ static func execute(instance: EffectInstance, owner: Entity, context: CombatCont
 	match effect.operation:
 		EffectResource.Operation.ADD_STAT_MODIFIER:
 			if "stats" in owner and effect.stat_modifier:
-				# Pass the effect_id as source_id override so we can remove it later
-				owner.stats.add_modifier(effect.stat_modifier, effect.effect_id)
+				# Check for override from context (used by EquipmentComponent)
+				var source_id = effect.effect_id
+				if context and context.custom_source_id != "":
+					source_id = context.custom_source_id
+				
+				# Pass the source_id so we can remove it later
+				owner.stats.add_modifier(effect.stat_modifier, source_id)
 				# print("Applied Stat Modifier from Effect: %s" % effect.effect_id)
+	
+		EffectResource.Operation.HEAL:
+			if "stats" in owner:
+				# Use CombatSystem.heal or direct modify
+				# CombatSystem.heal takes a context with heal_amount
+				context.heal_amount = int(value)
+				print("DEBUG: Executing HEAL operation. Value: %d, Context Amount: %d" % [value, context.heal_amount])
+				CombatSystem.heal(context)
+			else:
+				print("DEBUG: HEAL failed - Owner does not have stats")
 
 	# 5b. Final Safety Clamp again, just in case
 	context.damage = max(0, context.damage)

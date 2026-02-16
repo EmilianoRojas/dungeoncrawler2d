@@ -59,7 +59,14 @@ static func deal_damage(context: CombatContext) -> void:
 static func heal(context: CombatContext) -> void:
 	var target = context.target
 	var amount = context.heal_amount
-	if not target or amount <= 0: return
+	if not target:
+		print("DEBUG: Heal failed - No target")
+		return
+	if amount <= 0:
+		print("DEBUG: Heal failed - Amount <= 0 (%d)" % amount)
+		return
+
+	print("DEBUG: Applying Heal. Target: %s, Amount: %d, Current HP: %d" % [target.name, amount, target.stats.get_current(StatTypes.HP)])
 
 	# Apply Heal
 	target.stats.modify_current(StatTypes.HP, amount)
