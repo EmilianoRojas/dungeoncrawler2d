@@ -32,7 +32,8 @@ func initialize() -> void:
 	# Initialize new components
 	skill_component = SkillComponent.new(self) # Pass self for SkillManager integration
 	passives = PassiveEffectComponent.new()
-	equipment = EquipmentComponent.new(self)
+	equipment = EquipmentComponent.new()
+	equipment.initialize(self)
 	
 	# Wire dependencies
 	equipment.stats_component = stats

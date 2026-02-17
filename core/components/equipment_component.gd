@@ -10,13 +10,12 @@ extends Node
 # Slot -> EquipmentResource (Data)
 var equipped_items: Dictionary = {}
 
-# Slot -> InventoryItem (Runtime Instance)
-# This allows us to track unique item data (e.g. durability, enchants) for equipped items.
-var equipped_instances: Dictionary = {}
+# Generic Modifiers (Sources like Passives, Events, Equipment)
+var active_modifiers: Array[Resource] = []
 
 var owner_entity: Entity
 
-func _init(entity: Entity = null):
+func initialize(entity: Entity):
 	if entity:
 		owner_entity = entity
 
@@ -31,60 +30,66 @@ func equip(item: EquipmentResource) -> void:
 	
 	# 2. Register new item
 	equipped_items[slot] = item
-	var source_id = _get_source_id(slot)
 	
-	# 3. Apply Equipment Effects (Stats)
-	for effect in item.equip_effects:
-		# Use OperationExecutor to apply stats.
-		# Operations usually expect an EffectInstance.
-		var instance = EffectInstance.new(effect)
-		
-		# We need a context. For equipping, it's mostly self-application.
-		# However, OperationExecutor.execute expects a CombatContext usually.
-		# Stat Modifiers in OperationExecutor are handled specially:
-		# "owner.stats.add_modifier(effect.stat_modifier, effect.effect_id)"
-		# We want to override the source ID.
-		
-		# We can use a trick: pass context with custom_source_id if we modify OperationExecutor,
-		# OR we can manually call stats_component if we want to bypass OperationExecutor for simple stats.
-		# But the plan said "Use OperationExecutor".
-		
-		# Let's create a dummy context or rely on a new override in OperationExecutor.
-		var context = CombatContext.new()
-		context.custom_source_id = source_id # We added this in the plan
-		
-		if owner_entity:
-			OperationExecutor.execute(instance, owner_entity, context)
-		else:
-			push_error("EquipmentComponent: owner_entity is null, cannot apply stats!")
+	# 3. Apply Modifiers via Generic API
+	_apply_equipment_modifiers(item)
+			
+	print("Equipped %s to %s" % [item.display_name, EquipmentSlot.Type.keys()[slot]])
 
-	# 4. Add Skills
+# Wrapper to add modifiers from an equipment source
+func _apply_equipment_modifiers(item: EquipmentResource) -> void:
+	# Add the item itself as a source if needed, or iterate its effects
+	# The prompt suggested "add_modifier(source: Resource)"
+	# A single EquipmentResource might contain multiple effects.
+	var source_id = _get_source_id(item.slot)
+	
+	# Apply Stats
+	for effect in item.equip_effects:
+		_apply_effect(effect, source_id)
+		
+	# Apply Skills
 	if skill_component:
 		for skill in item.granted_skills:
 			skill_component.add_skill(skill, source_id)
 			
-			
-	# 5. Add Passives
+	# Apply Passives
 	if passive_effect_component:
 		for passive in item.passive_effects:
 			passive_effect_component.add_passive(passive, source_id)
-			
-	print("Equipped %s to %s" % [item.display_name, EquipmentSlot.Type.keys()[slot]])
 
-func equip_inventory_item(item: InventoryItem) -> void:
-	if not item or not item.equipment:
-		push_error("Cannot equip invalid InventoryItem")
-		return
-		
-	# Equip the base resource (handles stats, skills, passives)
-	equip(item.equipment)
+# GENERIC MODIFIER API
+func add_modifier(source: Resource) -> void:
+	if not source: return
 	
-	# Track the specific instance
-	var slot = item.equipment.slot
-	equipped_instances[slot] = item
+	if source is EquipmentResource:
+		# If passed as a modifier directly (e.g. from RewardApplier generic path)
+		# We might need to handle this carefully if it overlaps with equip()
+		# Ideally equip() manages slots, add_modifier manages untracked buffs.
+		pass
+	elif source is EffectResource:
+		# Apply a raw effect
+		# We need a source ID for this. Maybe "Modifier_<ResourceID>"
+		var source_id = "Mod_%s" % source.resource_name
+		_apply_effect(source, source_id)
+		active_modifiers.append(source)
+
+func remove_modifier(source: Resource) -> void:
+	if source in active_modifiers:
+		active_modifiers.erase(source)
+		# Todo: Remove logic needs source tracking mappping
+		# For now, simplistic implementation
+		pass
+
+func _apply_effect(effect: EffectResource, source_id: StringName) -> void:
+	# ... (Original effect application logic from equip) ...
+	var instance = EffectInstance.new(effect)
+	var context = CombatContext.new()
+	context.custom_source_id = source_id
 	
-	# Update item state
-	item.equipped_slot = _get_source_id(slot)
+	if owner_entity:
+		OperationExecutor.execute(instance, owner_entity, context)
+	else:
+		push_error("EquipmentComponent: owner_entity is null, cannot apply stats!")
 
 func unequip(slot: EquipmentSlot.Type) -> void:
 	if not equipped_items.has(slot):
@@ -104,12 +109,6 @@ func unequip(slot: EquipmentSlot.Type) -> void:
 	if passive_effect_component:
 		passive_effect_component.remove_from_source(source_id)
 	
-	var item = equipped_instances[slot]
-	if item:
-		item.equipped_slot = ""
-	
-	equipped_items.erase(slot)
-	equipped_instances.erase(slot)
 	print("Unequipped slot %s" % EquipmentSlot.Type.keys()[slot])
 
 func _get_source_id(slot: EquipmentSlot.Type) -> StringName:
