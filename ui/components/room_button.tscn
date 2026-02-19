@@ -1,0 +1,35 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8x7y6w504v3"]
+
+[ext_resource type="Script" path="res://ui/components/room_button.gd" id="1_a2b3c"]
+
+[node name="RoomButton" type="Button"]
+custom_minimum_size = Vector2(120, 160)
+offset_right = 120.0
+offset_bottom = 160.0
+script = ExtResource("1_a2b3c")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Icon" type="ColorRect" parent="VBoxContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(0.6, 0.6, 0.6, 1)
+
+[node name="Label" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Room Name"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="PreviewContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 4

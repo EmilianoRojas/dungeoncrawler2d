@@ -12,6 +12,7 @@ enum Phase {
 signal phase_changed(new_phase: Phase)
 signal turn_processing_start
 signal turn_processing_end
+signal battle_ended(result: Phase)
 
 var current_phase: Phase = Phase.WAITING
 var entities: Array[Entity] = []
@@ -43,23 +44,29 @@ func start_battle(player: Entity, enemies: Array[Entity]) -> void:
 
 func get_first_alive_enemy() -> Entity:
 	for e in entities:
-		if e.team == Entity.Team.ENEMY and e.stats.get_stat(StatTypes.HP) > 0:
+		if e.team == Entity.Team.ENEMY and e.is_alive():
 			return e
 	return null
 
 func get_alive_enemies() -> Array[Entity]:
 	var result: Array[Entity] = []
 	for e in entities:
-		if e.team == Entity.Team.ENEMY and e.stats.get_stat(StatTypes.HP) > 0:
+		if e.team == Entity.Team.ENEMY and e.is_alive():
 			result.append(e)
 	return result
 
 func get_alive_allies(entity: Entity) -> Array[Entity]:
 	var result: Array[Entity] = []
 	for e in entities:
-		if e.team == entity.team and e.stats.get_stat(StatTypes.HP) > 0:
+		if e.team == entity.team and e.is_alive():
 			result.append(e)
 	return result
+
+func are_all_enemies_dead() -> bool:
+	for e in entities:
+		if e.team == Entity.Team.ENEMY and e.is_alive():
+			return false
+	return true
 
 func start_new_turn() -> void:
 	turn_count += 1
@@ -113,7 +120,7 @@ func _process_decision_phase() -> void:
 			var context = {"target": player_entity}
 			
 			# Check if enemy is alive before acting
-			if entity.stats.get_stat(StatTypes.HP) <= 0: continue
+			if not entity.is_alive(): continue
 			
 			var action = entity.decide_action(context)
 			if action:
@@ -179,12 +186,12 @@ func _on_entity_died(data: Dictionary) -> void:
 	if dead_entity.team == Entity.Team.PLAYER:
 		print("DEFEAT!")
 		_set_phase(Phase.LOSS)
+		battle_ended.emit(Phase.LOSS)
 		return
 	
 	# Check if enemies remain
-	for e in entities:
-		if e.team == Entity.Team.ENEMY and e.stats.get_stat(StatTypes.HP) > 0:
-			return
-	
-	print("VICTORY!")
-	_set_phase(Phase.WIN)
+	# Check if enemies remain
+	if are_all_enemies_dead():
+		print("VICTORY!")
+		_set_phase(Phase.WIN)
+		battle_ended.emit(Phase.WIN)

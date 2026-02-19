@@ -2,15 +2,16 @@ class_name GameLoop
 extends Node
 
 enum State {
-	EXPLORATION,
+	ROOM_SELECTION,
 	COMBAT,
+	EVENT,
 	MENU
 }
 
-var current_state: State = State.EXPLORATION
+var current_state: State = State.ROOM_SELECTION
 
 # Systems
-var grid_manager: GridManager
+var dungeon_manager: DungeonManager
 var turn_manager: TurnManager
 var player_entity: Entity
 var game_ui: GameUI
@@ -30,6 +31,7 @@ func _ready() -> void:
 	add_child(game_ui)
 	game_ui.command_submitted.connect(handle_input)
 	game_ui.skill_activated.connect(_on_ui_skill_activated)
+	game_ui.room_selected.connect(_on_room_selected)
 	
 	# 2. Initialize Player
 	player_entity = Entity.new()
@@ -46,29 +48,26 @@ func _ready() -> void:
 		print("Error: Could not load Warrior class!")
 	
 	# 3. Initialize Systems
-	grid_manager = GridManager.new()
-	add_child(grid_manager)
+	dungeon_manager = DungeonManager.new()
+	add_child(dungeon_manager)
 	
 	turn_manager = TurnManager.new()
 	add_child(turn_manager)
 	
 	# 4. Connect Signals
 	turn_manager.turn_processing_end.connect(_on_battle_turn_end)
+	turn_manager.battle_ended.connect(_on_battle_ended)
 	GlobalEventBus.subscribe("damage_dealt", _on_damage_event)
 	
-	# 5. Generate Map
-	grid_manager.generate_grid(5, 5)
+	# 5. Generate Dungeon
+	dungeon_manager.generate_dungeon()
 	
-	_log("Map Generated. Player at %s" % grid_manager.current_position)
-	game_ui.set_mode(false) # Exploration mode
+	_log("Dungeon Generated. Starting at Depth %d" % dungeon_manager.current_depth)
+	_show_room_selection()
 
 func handle_input(command: String) -> void:
-	if current_state == State.EXPLORATION:
-		match command:
-			"move_n": _try_move(Vector2i(0, -1))
-			"move_s": _try_move(Vector2i(0, 1))
-			"move_e": _try_move(Vector2i(1, 0))
-			"move_w": _try_move(Vector2i(-1, 0))
+	# No more direct movement commands
+	pass
 	# Combat input is handled via _on_ui_skill_activated
 
 func _on_ui_skill_activated(skill: Skill) -> void:
@@ -83,20 +82,36 @@ func _on_ui_skill_activated(skill: Skill) -> void:
 		action.skill_reference = skill
 		turn_manager.submit_player_action(action)
 
-func _try_move(dir: Vector2i) -> void:
-	if grid_manager.move(dir):
-		_log("Moved to %s" % grid_manager.current_position)
-		_check_room_event(grid_manager.get_current_node())
-	else:
-		_log("Cannot move that way.")
+func _show_room_selection() -> void:
+	current_state = State.ROOM_SELECTION
+	var choices = dungeon_manager.get_next_choices()
+	# GameUI needs to be updated to accept this
+	if game_ui.has_method("show_room_selection"):
+		game_ui.show_room_selection(choices)
+	game_ui.set_mode(false) # Not combat
 
-func _check_room_event(node: MapNode) -> void:
-	var type_name = MapNode.Type.keys()[node.type]
-	_log("Room Type: %s" % type_name)
+func _on_room_selected(choice_index: int) -> void:
+	var node = dungeon_manager.advance_to_room(choice_index)
+	_log("Moved to Depth %d - Room Type: %s" % [dungeon_manager.current_depth, MapNode.Type.keys()[node.type]])
 	
-	if node.type == MapNode.Type.ENEMY:
-		_log("Encountered Enemy! Starting Combat.")
-		_start_combat(node)
+	_process_room_event(node)
+
+func _process_room_event(node: MapNode) -> void:
+	var type_name = MapNode.Type.keys()[node.type]
+	
+	match node.type:
+		MapNode.Type.ENEMY, MapNode.Type.ELITE, MapNode.Type.BOSS:
+			_log("Encountered %s! Starting Combat." % type_name)
+			_start_combat(node)
+		MapNode.Type.TREASURE:
+			_log("Found Treasure! (Not implemented)")
+			call_deferred("_on_room_completed")
+		MapNode.Type.EVENT:
+			_log("Event Triggered! (Not implemented)")
+			call_deferred("_on_room_completed")
+		MapNode.Type.SAFE:
+			_log("Safe Room. Rested.")
+			call_deferred("_on_room_completed")
 
 func _start_combat(node: MapNode) -> void:
 	current_state = State.COMBAT
@@ -108,8 +123,21 @@ func _start_combat(node: MapNode) -> void:
 	game_ui.set_mode(true)
 
 func _on_battle_turn_end() -> void:
-	# Keep strictly in combat for now until Win Condition implemented
 	pass
+
+func _on_battle_ended(result: TurnManager.Phase) -> void:
+	if result == TurnManager.Phase.WIN:
+		_log("Victory! Proceeding.")
+		# Small delay for effect
+		await get_tree().create_timer(1.0).timeout
+		_on_room_completed()
+	else:
+		_log("DEFEATED.")
+		# Handle Game Over
+
+func _on_room_completed() -> void:
+	# Show next choices
+	_show_room_selection()
 
 func _on_damage_event(data: Dictionary) -> void:
 	# Update UI for the target
