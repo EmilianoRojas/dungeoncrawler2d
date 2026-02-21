@@ -11,7 +11,8 @@ tier = 1
 base_stats = {
 &"hp": 60,
 &"max_hp": 60,
-&"intelligence": 10,
+&"strength": 4,
+&"intelligence": 6,
 &"speed": 6,
 &"avoid_chance": 10,
 &"defense": 4

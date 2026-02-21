@@ -59,6 +59,13 @@ func apply_class(class_data: ClassData) -> void:
 	# 2. Learn Starting Skills
 	for s in class_data.starting_skills:
 		skills.learn_skill(s)
+	
+	# 3. Apply Starting Passives
+	for passive_id in class_data.starting_passives:
+		var passive_info = PassiveLibrary.get_passive(passive_id)
+		if not passive_info.is_empty():
+			passives.add_passive(null, &"class_passive", passive_info)
+			print("Applied passive: %s" % passive_info.get("name", passive_id))
 
 func is_alive() -> bool:
 	return stats.current.get(StatTypes.HP, 0) > 0

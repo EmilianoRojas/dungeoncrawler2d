@@ -14,4 +14,5 @@ base_stats = {
 "hp": 120,
 "speed": 5
 }
-starting_skills = Array[Resource]([ExtResource("2_skill1")])6
+starting_skills = Array[Resource]([ExtResource("2_skill1")])
+starting_passives = Array[StringName]([&"super_strength"])6

@@ -5,3 +5,4 @@ extends Resource
 @export var description: String = ""
 @export var base_stats: Dictionary[StringName, int] = {}
 @export var starting_skills: Array[Skill] = []
+@export var starting_passives: Array[StringName] = []
