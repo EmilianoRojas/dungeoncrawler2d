@@ -6,6 +6,7 @@
 [resource]
 script = ExtResource("1_class")
 title = "Warrior"
+description = "A mighty fighter with high strength and defense. Excels in melee combat."
 base_stats = {
 "strength": 12,
 "defense": 10,
@@ -13,4 +14,4 @@ base_stats = {
 "hp": 120,
 "speed": 5
 }
-starting_skills = Array[Resource]([ExtResource("2_skill1")])
+starting_skills = Array[Resource]([ExtResource("2_skill1")])6

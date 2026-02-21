@@ -21,6 +21,9 @@ const UI_SCENE = preload("res://ui/game_ui.tscn")
 # Skill Draft state
 var _pending_skill_offer: Skill = null
 
+# Passive system
+var passive_resolver: PassiveResolver
+
 func _exit_tree() -> void:
 	# Ensure we clean up listeners when scene changes or game quits
 	GlobalEventBus.unsubscribe("damage_dealt", _on_damage_event)
@@ -43,13 +46,19 @@ func _ready() -> void:
 	player_entity.team = Entity.Team.PLAYER
 	player_entity.initialize()
 	
-	# Load Warrior Class
-	var warrior_class = load("res://data/classes/warrior.tres")
-	if warrior_class:
-		player_entity.apply_class(warrior_class)
-		print("Loaded Class: %s" % warrior_class.title)
+	# Load selected class (set by Lobby, fallback to Warrior)
+	var selected_class: ClassData = null
+	if Engine.has_meta("selected_class"):
+		selected_class = Engine.get_meta("selected_class") as ClassData
+	
+	if not selected_class:
+		selected_class = load("res://data/classes/warrior.tres")
+	
+	if selected_class:
+		player_entity.apply_class(selected_class)
+		print("Loaded Class: %s" % selected_class.title)
 	else:
-		print("Error: Could not load Warrior class!")
+		print("Error: Could not load any class!")
 	
 	# 3. Initialize Systems
 	dungeon_manager = DungeonManager.new()
@@ -64,6 +73,17 @@ func _ready() -> void:
 	game_ui.skill_draft_choice.connect(_on_skill_draft_choice)
 	GlobalEventBus.subscribe("damage_dealt", _on_damage_event)
 	GlobalEventBus.subscribe("combat_log", _on_combat_log)
+	
+	# 5. Initialize Passive Resolver
+	passive_resolver = PassiveResolver.new()
+	add_child(passive_resolver)
+	GlobalEventBus.subscribe("battle_start", passive_resolver.on_battle_start)
+	GlobalEventBus.subscribe("damage_dealt", passive_resolver.on_damage_dealt)
+	GlobalEventBus.subscribe("damage_taken", passive_resolver.on_damage_taken)
+	GlobalEventBus.subscribe("pre_damage_calc", passive_resolver.on_pre_damage_calc)
+	GlobalEventBus.subscribe("pre_damage_apply", passive_resolver.on_pre_damage_apply)
+	GlobalEventBus.subscribe("parry_success", passive_resolver.on_parry_success)
+	GlobalEventBus.subscribe("avoid_success", passive_resolver.on_avoid_success)
 	
 	# 5. Generate Dungeon
 	dungeon_manager.generate_dungeon()
@@ -157,14 +177,31 @@ func _start_combat(node: MapNode) -> void:
 	var enemy = EnemyFactory.create_random_enemy(tier, dungeon_manager.current_floor)
 	_log("Floor %d - %s fight! [%s]" % [dungeon_manager.current_floor, node.get_type_name(), enemy.name])
 	
+	# Register passives for combat
+	passive_resolver.register(player_entity)
+	passive_resolver.register(enemy)
+	
 	turn_manager.start_battle(player_entity, [enemy])
 	game_ui.initialize_battle(player_entity, [enemy])
 	game_ui.set_mode(true)
+	
+	# Dispatch battle_start event for passives
+	GlobalEventBus.dispatch("battle_start", {
+		"player": player_entity,
+		"source": player_entity,
+		"target": enemy,
+		"enemies": [enemy]
+	})
 
 func _on_battle_turn_end() -> void:
 	pass
 
 func _on_battle_ended(result: TurnManager.Phase) -> void:
+	# Clean up passives from battle
+	GlobalEventBus.dispatch("battle_end", {"player": player_entity})
+	passive_resolver.cleanup_battle_modifiers(player_entity)
+	passive_resolver.clear()
+	
 	if result == TurnManager.Phase.WIN:
 		_log("Victory! Proceeding.")
 		# Reset shield after battle (GameSpec §3)

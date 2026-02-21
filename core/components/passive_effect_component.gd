@@ -9,15 +9,23 @@ extends Node
 # }
 var active_passives: Array[Dictionary] = []
 
-func add_passive(effect: EffectResource, source_id: StringName) -> void:
-	if not effect: return
+func add_passive(effect: EffectResource, source_id: StringName, passive_info: Dictionary = {}) -> void:
+	if not effect and passive_info.is_empty(): return
 	
 	active_passives.append({
 		"effect": effect,
-		"source": source_id
+		"source": source_id,
+		"passive_info": passive_info
 	})
 	
-	print("Passive added: %s from %s" % [effect.id if "id" in effect else "Effect", source_id])
+	var label = ""
+	if not passive_info.is_empty():
+		label = str(passive_info.get("name", "Effect"))
+	elif effect and "effect_id" in effect:
+		label = str(effect.effect_id)
+	else:
+		label = "Effect"
+	print("Passive added: %s from %s" % [label, source_id])
 
 func remove_from_source(source_id: StringName) -> void:
 	var new_list: Array[Dictionary] = []

@@ -9,10 +9,10 @@ enum Trigger {
 	ON_SKILL_CAST,
 
 	# --- DAMAGE PIPELINE ---
-	ON_PRE_DAMAGE_CALC,        # before base calculation
-	ON_DAMAGE_CALCULATED,      # after base damage (attacker phase)
-	ON_DAMAGE_RECEIVED_CALC,   # defender phase
-	ON_PRE_DAMAGE_APPLY,       # final adjustments
+	ON_PRE_DAMAGE_CALC, # before base calculation
+	ON_DAMAGE_CALCULATED, # after base damage (attacker phase)
+	ON_DAMAGE_RECEIVED_CALC, # defender phase
+	ON_PRE_DAMAGE_APPLY, # final adjustments
 
 	# --- AFTER APPLY ---
 	ON_DAMAGE_DEALT,
@@ -25,7 +25,15 @@ enum Trigger {
 	
 	# --- TURN EVENTS ---
 	ON_TURN_START,
-	ON_TURN_END
+	ON_TURN_END,
+	
+	# --- BATTLE EVENTS ---
+	ON_BATTLE_START,
+	ON_BATTLE_END,
+	
+	# --- COMBAT RESULT EVENTS ---
+	ON_PARRY_SUCCESS,
+	ON_AVOID_SUCCESS
 }
 
 enum Operation {
@@ -67,10 +75,10 @@ enum Operation {
 @export var conditions: Array[EffectCondition] = []
 
 enum StackRule {
-	ADD,        # Sum stacks, refresh duration
-	REFRESH,    # Refresh duration only
-	REPLACE,    # Replace entire instance
-	IGNORE      # Do nothing if exists
+	ADD, # Sum stacks, refresh duration
+	REFRESH, # Refresh duration only
+	REPLACE, # Replace entire instance
+	IGNORE # Do nothing if exists
 }
 
 @export var stack_rule: StackRule = StackRule.ADD

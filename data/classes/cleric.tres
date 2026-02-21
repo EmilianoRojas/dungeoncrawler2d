@@ -6,6 +6,7 @@
 [resource]
 script = ExtResource("1_class")
 title = "Cleric"
+description = "A holy warrior guided by faith. High piety fuels divine skills."
 base_stats = {
 "strength": 6,
 "defense": 8,
