@@ -466,6 +466,47 @@ enum StackRule { ADD, REFRESH, REPLACE, IGNORE }
 @export var duration_turns: int = -1 # -1 = infinito
 ```
 
+### 9.6.2. Ejemplo: Pasiva "Berserker" (Doble Filo)
+Esta pasiva demuestra cómo una habilidad puede alterar múltiples flujos del combate suscribiéndose a más de un evento a la vez. El efecto: "Haces y recibes el doble de daño".
+
+```csharp
+public class Passive_Berserker : PassiveAbility 
+{
+    private BattleEntity _owner;
+
+    public override void Initialize(BattleEntity owner) 
+    {
+        _owner = owner;
+        
+        // 1. Nos suscribimos para duplicar el daño que RECIBIMOS
+        _owner.OnBeforeDamageTaken += DoubleIncomingDamage;
+        
+        // 2. Nos suscribimos para duplicar el daño que HACEMOS
+        _owner.OnBeforeDamageDealt += DoubleOutgoingDamage; 
+    }
+
+    // Intercepta el daño que el enemigo nos va a hacer
+    private void DoubleIncomingDamage(DamageInfo incomingDamage) 
+    {
+        incomingDamage.FinalDamage *= 2f;
+        Debug.Log($"[Berserker] Daño recibido DUPLICADO. Nuevo daño: {incomingDamage.FinalDamage}");
+    }
+
+    // Intercepta el daño que nosotros calculamos antes de enviárselo al enemigo
+    private void DoubleOutgoingDamage(DamageInfo outgoingDamage) 
+    {
+        outgoingDamage.FinalDamage *= 2f;
+        Debug.Log($"[Berserker] Daño infligido DUPLICADO. Nuevo daño: {outgoingDamage.FinalDamage}");
+    }
+
+    // Limpieza crítica si el personaje pierde la pasiva
+    public override void Dispose() 
+    {
+        _owner.OnBeforeDamageTaken -= DoubleIncomingDamage;
+        _owner.OnBeforeDamageDealt -= DoubleOutgoingDamage;
+    }
+}
+
 ### Por qué esta estructura es útil:
 1. **Data-Driven:** Las pasivas como *Hard Shield* se implementan como archivos `.tres` con trigger `ON_DAMAGE_RECEIVED_CALC` y operation `REDUCE_DAMAGE_PERCENT`, sin código custom.
 2. **Desacoplamiento:** `StatsComponent` no sabe qué efectos existen. Solo recibe el daño ya modificado.
