@@ -18,6 +18,9 @@ var game_ui: GameUI
 
 const UI_SCENE = preload("res://ui/game_ui.tscn")
 
+# Skill Draft state
+var _pending_skill_offer: Skill = null
+
 func _exit_tree() -> void:
 	# Ensure we clean up listeners when scene changes or game quits
 	GlobalEventBus.unsubscribe("damage_dealt", _on_damage_event)
@@ -58,6 +61,7 @@ func _ready() -> void:
 	# 4. Connect Signals
 	turn_manager.turn_processing_end.connect(_on_battle_turn_end)
 	turn_manager.battle_ended.connect(_on_battle_ended)
+	game_ui.skill_draft_choice.connect(_on_skill_draft_choice)
 	GlobalEventBus.subscribe("damage_dealt", _on_damage_event)
 	GlobalEventBus.subscribe("combat_log", _on_combat_log)
 	
@@ -93,6 +97,11 @@ func _show_room_selection() -> void:
 		dungeon_manager.current_floor,
 		dungeon_manager.current_depth,
 		dungeon_manager.floor_modifiers
+	)
+	game_ui.update_level_info(
+		player_entity.level,
+		player_entity.xp,
+		LevelUpSystem.xp_for_level(player_entity.level)
 	)
 	game_ui.show_room_selection(choices)
 	game_ui.set_mode(false)
@@ -162,6 +171,32 @@ func _on_battle_ended(result: TurnManager.Phase) -> void:
 		player_entity.stats.reset_shield()
 		# Generate loot from the enemy
 		_process_combat_loot()
+		
+		# Award XP based on enemy tier
+		var current_room = dungeon_manager.current_room
+		var tier = 0 # NORMAL
+		if current_room:
+			if current_room.type == MapNode.Type.ELITE:
+				tier = 1
+			elif current_room.type == MapNode.Type.BOSS:
+				tier = 2
+		
+		var xp_amount = LevelUpSystem.get_xp_for_tier(tier)
+		_log("+%d XP" % xp_amount)
+		var leveled_up = LevelUpSystem.award_xp(player_entity, xp_amount)
+		
+		# Update XP display
+		game_ui.update_level_info(
+			player_entity.level,
+			player_entity.xp,
+			LevelUpSystem.xp_for_level(player_entity.level)
+		)
+		
+		if leveled_up:
+			_log("⬆ LEVEL UP! Now Level %d" % player_entity.level)
+			_start_skill_draft()
+			return # Wait for draft to complete before proceeding
+		
 		dungeon_manager.complete_current_room()
 		await get_tree().create_timer(1.0).timeout
 		_on_room_completed()
@@ -233,3 +268,58 @@ func _log(msg: String) -> void:
 		game_ui.add_log(msg)
 	else:
 		print(msg) # Fallback if UI not ready
+
+# --- SKILL DRAFT ---
+
+func _start_skill_draft() -> void:
+	var offered = LevelUpSystem.get_skill_offer(player_entity)
+	if not offered:
+		_log("No skills available to offer.")
+		_finish_post_combat()
+		return
+	
+	_pending_skill_offer = offered
+	var upgrade = LevelUpSystem.find_upgrade_match(player_entity, offered)
+	
+	if upgrade:
+		_log("Skill offered: %s (UPGRADE to Lv %d!)" % [offered.skill_name, upgrade.skill_level + 1])
+	else:
+		_log("Skill offered: %s" % offered.skill_name)
+	
+	game_ui.show_skill_draft(
+		offered,
+		player_entity.skills.known_skills,
+		player_entity.max_skill_slots,
+		upgrade
+	)
+
+func _on_skill_draft_choice(action: String, slot_index: int) -> void:
+	if not _pending_skill_offer:
+		_finish_post_combat()
+		return
+	
+	match action:
+		"learn":
+			LevelUpSystem.learn_skill(player_entity, _pending_skill_offer)
+			_log("Learned: %s" % _pending_skill_offer.skill_name)
+		"upgrade":
+			var existing = LevelUpSystem.find_upgrade_match(player_entity, _pending_skill_offer)
+			if existing:
+				LevelUpSystem.upgrade_skill(existing)
+				_log("Upgraded: %s → Lv %d" % [existing.skill_name, existing.skill_level])
+		"replace":
+			var old_name = ""
+			if slot_index >= 0 and slot_index < player_entity.skills.known_skills.size():
+				old_name = player_entity.skills.known_skills[slot_index].skill_name
+			LevelUpSystem.learn_skill(player_entity, _pending_skill_offer, slot_index)
+			_log("Replaced %s with %s" % [old_name, _pending_skill_offer.skill_name])
+		"skip":
+			_log("Skipped skill offer.")
+	
+	_pending_skill_offer = null
+	_finish_post_combat()
+
+func _finish_post_combat() -> void:
+	dungeon_manager.complete_current_room()
+	await get_tree().create_timer(1.0).timeout
+	_on_room_completed()

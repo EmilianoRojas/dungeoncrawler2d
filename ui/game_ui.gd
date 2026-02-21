@@ -4,11 +4,14 @@ extends Control
 signal command_submitted(cmd: String)
 signal skill_activated(skill: Skill)
 signal room_selected(index: int)
+signal skill_draft_choice(action: String, slot_index: int)
 
 # Top Bar
 @onready var floor_label: Label = $TopBar/HBoxContainer/FloorLabel
 @onready var depth_label: Label = $TopBar/HBoxContainer/DepthLabel
 @onready var modifier_label: Label = $TopBar/HBoxContainer/ModifierLabel
+@onready var level_label: Label = $TopBar/HBoxContainer/LevelLabel
+@onready var xp_label: Label = $TopBar/HBoxContainer/XPLabel
 
 # Battle UI
 @onready var battle_container: HBoxContainer = $BattleContainer
@@ -28,6 +31,9 @@ const ROOM_SELECTOR_SCENE = preload("res://ui/components/room_selector.tscn")
 var room_selector: RoomSelector
 
 const SKILL_BTN_SCENE = preload("res://ui/components/skill_button.tscn")
+const SKILL_DRAFT_SCENE = preload("res://ui/components/skill_draft_panel.tscn")
+
+var active_draft: SkillDraftPanel = null
 
 func _ready() -> void:
 	# Initialize Room Selector
@@ -131,3 +137,24 @@ func add_log(text: String) -> void:
 	print(text)
 	if log_label:
 		log_label.append_text(text + "\n")
+
+# --- Level / XP ---
+
+func update_level_info(level: int, xp: int, xp_needed: int) -> void:
+	if level_label:
+		level_label.text = "Lv %d" % level
+	if xp_label:
+		xp_label.text = "XP: %d/%d" % [xp, xp_needed]
+
+func show_skill_draft(offered: Skill, skills: Array[Skill], max_slots: int, upgrade: Skill = null) -> void:
+	if active_draft:
+		active_draft.queue_free()
+	
+	active_draft = SKILL_DRAFT_SCENE.instantiate() as SkillDraftPanel
+	add_child(active_draft)
+	active_draft.setup(offered, skills, max_slots, upgrade)
+	active_draft.draft_completed.connect(_on_draft_completed)
+
+func _on_draft_completed(action: String, slot_index: int) -> void:
+	active_draft = null
+	skill_draft_choice.emit(action, slot_index)

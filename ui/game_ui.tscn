@@ -35,6 +35,14 @@ text = "Depth: 0"
 layout_mode = 2
 text = ""
 
+[node name="LevelLabel" type="Label" parent="TopBar/HBoxContainer"]
+layout_mode = 2
+text = "Lv 1"
+
+[node name="XPLabel" type="Label" parent="TopBar/HBoxContainer"]
+layout_mode = 2
+text = "XP: 0/15"
+
 [node name="BattleContainer" type="HBoxContainer" parent="."]
 visible = false
 layout_mode = 1

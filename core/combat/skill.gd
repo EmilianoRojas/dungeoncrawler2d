@@ -21,3 +21,6 @@ enum ScalingType {
 # Accuracy & Combat
 @export var hit_chance: int = 90 # Percentage (0-100). 90 = 90% base hit
 @export var ignores_shield: bool = false # Penetrating: bypasses Shield bar
+
+# Progression
+@export var skill_level: int = 1 # Increases via Skill Draft upgrade (+10% damage per level)

@@ -88,8 +88,10 @@ func add_modifier(mod: StatModifier, source_id_override: StringName = "") -> voi
 	
 	modifiers[mod.stat].append(instance)
 	
-	# If this affects MAX_HP, we might want to adjust current HP scaling?
-	# For now, let's keep it simple.
+	# If this adds MAX_SHIELD, fill current shield to the new max
+	if mod.stat == StatTypes.MAX_SHIELD:
+		var new_max = get_stat(StatTypes.MAX_SHIELD)
+		current[StatTypes.SHIELD] = new_max
 
 func remove_modifiers_from_source(source_id: StringName) -> void:
 	for stat in modifiers:

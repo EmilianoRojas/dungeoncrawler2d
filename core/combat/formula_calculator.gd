@@ -18,4 +18,8 @@ static func calculate_damage(skill: Skill, source: Entity) -> int:
 	if source.stats:
 		base_damage += source.stats.get_stat(StatTypes.POWER)
 	
+	# Skill level scaling: +10% per level above 1 (GameSpec §4)
+	if skill.skill_level > 1:
+		base_damage = int(base_damage * (1.0 + (skill.skill_level - 1) * 0.10))
+	
 	return base_damage

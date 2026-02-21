@@ -18,6 +18,11 @@ var equipment: EquipmentComponent
 var skill_component: SkillComponent
 var passives: PassiveEffectComponent
 
+# Progression
+var xp: int = 0
+var level: int = 1
+var max_skill_slots: int = 4
+
 func _ready() -> void:
 	if not initialized:
 		initialize()
