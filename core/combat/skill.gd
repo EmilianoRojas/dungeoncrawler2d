@@ -13,7 +13,11 @@ enum ScalingType {
 @export var scaling_stat: StringName = StatTypes.STRENGTH
 @export var scaling_percent: float = 1.0 # 1.0 = 100%
 @export var on_cast_effects: Array[EffectResource] = [] # Self
-@export var on_hit_effects: Array[EffectResource] = []  # Target
+@export var on_hit_effects: Array[EffectResource] = [] # Target
 # Base
 @export var base_power: int = 0
 @export var max_cooldown: int = 0 # in turns
+
+# Accuracy & Combat
+@export var hit_chance: int = 90 # Percentage (0-100). 90 = 90% base hit
+@export var ignores_shield: bool = false # Penetrating: bypasses Shield bar

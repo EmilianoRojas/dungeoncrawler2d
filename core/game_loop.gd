@@ -65,7 +65,7 @@ func _ready() -> void:
 	_log("Dungeon Generated. Starting at Depth %d" % dungeon_manager.current_depth)
 	_show_room_selection()
 
-func handle_input(command: String) -> void:
+func handle_input(_command: String) -> void:
 	# No more direct movement commands
 	pass
 	# Combat input is handled via _on_ui_skill_activated
@@ -85,38 +85,58 @@ func _on_ui_skill_activated(skill: Skill) -> void:
 func _show_room_selection() -> void:
 	current_state = State.ROOM_SELECTION
 	var choices = dungeon_manager.get_next_choices()
-	# GameUI needs to be updated to accept this
-	if game_ui.has_method("show_room_selection"):
-		game_ui.show_room_selection(choices)
-	game_ui.set_mode(false) # Not combat
+	
+	# Update UI with floor info
+	game_ui.update_floor_info(
+		dungeon_manager.current_floor,
+		dungeon_manager.current_depth,
+		dungeon_manager.floor_modifiers
+	)
+	game_ui.show_room_selection(choices)
+	game_ui.set_mode(false)
 
 func _on_room_selected(choice_index: int) -> void:
 	var node = dungeon_manager.advance_to_room(choice_index)
-	_log("Moved to Depth %d - Room Type: %s" % [dungeon_manager.current_depth, MapNode.Type.keys()[node.type]])
+	_log("Depth %d — %s" % [dungeon_manager.current_depth, node.get_type_name()])
+	
+	# Update top bar
+	game_ui.update_floor_info(
+		dungeon_manager.current_floor,
+		dungeon_manager.current_depth,
+		dungeon_manager.floor_modifiers
+	)
 	
 	_process_room_event(node)
 
 func _process_room_event(node: MapNode) -> void:
-	var type_name = MapNode.Type.keys()[node.type]
+	var type_name = node.get_type_name()
 	
 	match node.type:
 		MapNode.Type.ENEMY, MapNode.Type.ELITE, MapNode.Type.BOSS:
 			_log("Encountered %s! Starting Combat." % type_name)
 			_start_combat(node)
-		MapNode.Type.TREASURE:
-			_log("Found Treasure! (Not implemented)")
+		MapNode.Type.CHEST:
+			_log("Found a Chest! (Loot not implemented)")
+			dungeon_manager.complete_current_room()
 			call_deferred("_on_room_completed")
 		MapNode.Type.EVENT:
 			_log("Event Triggered! (Not implemented)")
+			dungeon_manager.complete_current_room()
 			call_deferred("_on_room_completed")
-		MapNode.Type.SAFE:
-			_log("Safe Room. Rested.")
+		MapNode.Type.CAMP:
+			_log("Camp. Rested and recovered.")
+			# Heal HP and reset Shield (GameSpec §1)
+			player_entity.stats.modify_current(StatTypes.HP, player_entity.stats.get_stat(StatTypes.MAX_HP))
+			player_entity.stats.reset_shield()
+			dungeon_manager.complete_current_room()
 			call_deferred("_on_room_completed")
 
 func _start_combat(node: MapNode) -> void:
 	current_state = State.COMBAT
 	
+	# TODO: Use node.type to pick enemy template (Elite/Boss = harder enemies)
 	var enemy = EnemyFactory.create_goblin()
+	_log("Floor %d - %s fight!" % [dungeon_manager.current_floor, node.get_type_name()])
 	
 	turn_manager.start_battle(player_entity, [enemy])
 	game_ui.initialize_battle(player_entity, [enemy])
@@ -128,12 +148,14 @@ func _on_battle_turn_end() -> void:
 func _on_battle_ended(result: TurnManager.Phase) -> void:
 	if result == TurnManager.Phase.WIN:
 		_log("Victory! Proceeding.")
-		# Small delay for effect
+		# Reset shield after battle (GameSpec §3)
+		player_entity.stats.reset_shield()
+		dungeon_manager.complete_current_room()
 		await get_tree().create_timer(1.0).timeout
 		_on_room_completed()
 	else:
 		_log("DEFEATED.")
-		# Handle Game Over
+		# Handle Game Over (Run ends, reset everything)
 
 func _on_room_completed() -> void:
 	# Show next choices

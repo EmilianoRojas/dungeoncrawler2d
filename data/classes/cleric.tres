@@ -11,6 +11,8 @@ base_stats = {
 "defense": 8,
 "max_hp": 100,
 "hp": 100,
-"speed": 6
+"speed": 6,
+"piety": 12
 }
 starting_skills = Array[Resource]([ExtResource("2_skill1")])
+

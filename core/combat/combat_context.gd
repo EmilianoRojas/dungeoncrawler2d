@@ -11,6 +11,9 @@ var damage: int = 0
 
 var is_crit: bool = false
 var is_kill: bool = false
+var is_parry: bool = false
+var is_avoided: bool = false
+var is_penetrating: bool = false
 var heal_amount: int = 0
 var context_data: Dictionary = {}
 var ignore_defense: bool = false

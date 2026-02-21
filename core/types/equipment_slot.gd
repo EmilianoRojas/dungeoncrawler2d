@@ -1,10 +1,8 @@
 class_name EquipmentSlot
 
+# GameSpec §5: Up to 3 equipped simultaneously
 enum Type {
-	MAIN_HAND,
-	OFF_HAND,
-	HEAD,
-	BODY,
-	ACCESSORY_1,
-	ACCESSORY_2
+	WEAPON,
+	ARMOR,
+	HELMET
 }

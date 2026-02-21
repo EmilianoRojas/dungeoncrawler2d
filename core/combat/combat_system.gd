@@ -23,8 +23,28 @@ static func deal_damage(context: CombatContext) -> void:
 	if source: source.effects.dispatch(EffectResource.Trigger.ON_PRE_DAMAGE_APPLY, context)
 	target.effects.dispatch(EffectResource.Trigger.ON_PRE_DAMAGE_APPLY, context)
 
-	# ===== APPLY DAMAGE =====
-	target.stats.modify_current(StatTypes.HP, -context.damage)
+	# ===== APPLY DAMAGE (with Shield Absorption) =====
+	var remaining_damage = context.damage
+	
+	if context.is_penetrating:
+		# Penetrating: bypass Shield, go straight to HP
+		target.stats.modify_current(StatTypes.HP, -remaining_damage)
+	else:
+		# Normal: Shield absorbs first, overflow hits HP
+		var current_shield = target.stats.get_current(StatTypes.SHIELD)
+		if current_shield > 0:
+			if remaining_damage <= current_shield:
+				# Shield absorbs all damage
+				target.stats.modify_current(StatTypes.SHIELD, -remaining_damage)
+				remaining_damage = 0
+			else:
+				# Shield breaks, overflow goes to HP
+				remaining_damage -= current_shield
+				target.stats.modify_current(StatTypes.SHIELD, -current_shield)
+		
+		# Apply remaining damage to HP
+		if remaining_damage > 0:
+			target.stats.modify_current(StatTypes.HP, -remaining_damage)
 
 	# ===== POST DAMAGE =====
 	if source: source.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_DEALT, context)
@@ -33,7 +53,7 @@ static func deal_damage(context: CombatContext) -> void:
 	# Log/UI events
 	GlobalEventBus.dispatch("combat_log", {
 		"message": "%s attacks %s for %d damage" % [source.name if source else "Unknown", target.name, context.damage]
-	}) 
+	})
 	
 	GlobalEventBus.dispatch("damage_dealt", {
 		"source": source,

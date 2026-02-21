@@ -12,33 +12,45 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_u7x8y")
 
-[node name="Panel" type="Panel" parent="."]
+[node name="TopBar" type="PanelContainer" parent="."]
 layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
+anchors_preset = 10
 anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -200.0
+offset_bottom = 40.0
 grow_horizontal = 2
-grow_vertical = 0
 
-[node name="RichTextLabel" type="RichTextLabel" parent="Panel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-scroll_following = true
+[node name="HBoxContainer" type="HBoxContainer" parent="TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="FloorLabel" type="Label" parent="TopBar/HBoxContainer"]
+layout_mode = 2
+text = "Floor 1"
+
+[node name="DepthLabel" type="Label" parent="TopBar/HBoxContainer"]
+layout_mode = 2
+text = "Depth: 0"
+
+[node name="ModifierLabel" type="Label" parent="TopBar/HBoxContainer"]
+layout_mode = 2
+text = ""
 
 [node name="BattleContainer" type="HBoxContainer" parent="."]
 visible = false
 layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 150.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -120.0
+offset_right = 300.0
+offset_bottom = 60.0
 grow_horizontal = 2
+grow_vertical = 2
 alignment = 1
+theme_override_constants/separation = 40
 
 [node name="PlayerInfo" type="VBoxContainer" parent="BattleContainer"]
 layout_mode = 2
@@ -51,6 +63,9 @@ text = "Player"
 horizontal_alignment = 1
 
 [node name="HPBar" parent="BattleContainer/PlayerInfo" instance=ExtResource("2_hpbar")]
+layout_mode = 2
+
+[node name="ShieldBar" parent="BattleContainer/PlayerInfo" instance=ExtResource("2_hpbar")]
 layout_mode = 2
 
 [node name="VSLabel" type="Label" parent="BattleContainer"]
@@ -70,6 +85,9 @@ horizontal_alignment = 1
 [node name="HPBar" parent="BattleContainer/EnemyInfo" instance=ExtResource("2_hpbar")]
 layout_mode = 2
 
+[node name="ShieldBar" parent="BattleContainer/EnemyInfo" instance=ExtResource("2_hpbar")]
+layout_mode = 2
+
 [node name="SkillContainer" type="HBoxContainer" parent="."]
 visible = false
 layout_mode = 1
@@ -78,10 +96,30 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -200.0
+offset_left = -250.0
 offset_top = -280.0
-offset_right = 200.0
+offset_right = 250.0
 offset_bottom = -220.0
 grow_horizontal = 2
 grow_vertical = 0
 alignment = 1
+theme_override_constants/separation = 10
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -200.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="RichTextLabel" type="RichTextLabel" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+scroll_following = true
