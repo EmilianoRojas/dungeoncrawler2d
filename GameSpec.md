@@ -512,6 +512,20 @@ public class Passive_Berserker : PassiveAbility
 2. **Desacoplamiento:** `StatsComponent` no sabe qué efectos existen. Solo recibe el daño ya modificado.
 3. **Fácil de expandir:** Nuevas pasivas como *Spiked Armor* se crean como otro `.tres` con trigger `ON_DAMAGE_TAKEN` y operation `ADD_DAMAGE` hacia el atacante.
 
+### Un pequeño detalle técnico para que esto funcione:
+En el código del `SkillController` que hicimos antes, justo cuando calculamos el daño y antes de mandárselo al objetivo, el sistema tiene que avisarle a nuestras pasivas que estamos a punto de atacar. Solo tendríamos que asegurar que esa línea exista en el método `CastSkill`:
+
+```csharp
+// Dentro de SkillController.cs -> CastSkill()
+
+DamageInfo damagePackage = CalculateDamage(skillToCast);
+
+// ¡Avisamos a nuestras pasivas (como el Berserker) para que modifiquen nuestro paquete de daño!
+_owner.TriggerBeforeDamageDealt(damagePackage); 
+
+// Ahora sí, enviamos el daño duplicado al enemigo
+target.TakeDamage(damagePackage);
+
 ### 9.7. CombatSystem (Pipeline de Daño Completo)
 Funciones estáticas que procesan el daño a través de todas las fases del pipeline, incluyendo Shield absorption y death check.
 
