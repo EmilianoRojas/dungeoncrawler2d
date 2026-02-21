@@ -51,8 +51,9 @@ static func deal_damage(context: CombatContext) -> void:
 	target.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_TAKEN, context)
 
 	# Log/UI events
+	var crit_tag = "[color=red]CRIT![/color] " if context.is_crit else ""
 	GlobalEventBus.dispatch("combat_log", {
-		"message": "%s attacks %s for %d damage" % [source.name if source else "Unknown", target.name, context.damage]
+		"message": "%s%s attacks %s for %d damage" % [crit_tag, source.name if source else "Unknown", target.name, context.damage]
 	})
 	
 	GlobalEventBus.dispatch("damage_dealt", {

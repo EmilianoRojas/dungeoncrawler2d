@@ -21,6 +21,7 @@ const UI_SCENE = preload("res://ui/game_ui.tscn")
 func _exit_tree() -> void:
 	# Ensure we clean up listeners when scene changes or game quits
 	GlobalEventBus.unsubscribe("damage_dealt", _on_damage_event)
+	GlobalEventBus.unsubscribe("combat_log", _on_combat_log)
 
 func _ready() -> void:
 	print("Initializing GameLoop Instance: %d" % get_instance_id())
@@ -58,6 +59,7 @@ func _ready() -> void:
 	turn_manager.turn_processing_end.connect(_on_battle_turn_end)
 	turn_manager.battle_ended.connect(_on_battle_ended)
 	GlobalEventBus.subscribe("damage_dealt", _on_damage_event)
+	GlobalEventBus.subscribe("combat_log", _on_combat_log)
 	
 	# 5. Generate Dungeon
 	dungeon_manager.generate_dungeon()
@@ -161,13 +163,17 @@ func _on_room_completed() -> void:
 	# Show next choices
 	_show_room_selection()
 
+func _on_combat_log(data: Dictionary) -> void:
+	var msg = data.get("message", "")
+	if msg != "":
+		_log(msg)
+
 func _on_damage_event(data: Dictionary) -> void:
 	# Update UI for the target
 	var target = data.get("target")
 	if target:
 		var is_player = (target == player_entity)
 		game_ui.update_hp(target, is_player)
-		_log("%s took %d damage!" % [target.name, data.get("damage", 0)])
 
 func _log(msg: String) -> void:
 	# game_ui.add_log already prints to console, so we don't need print(msg) here

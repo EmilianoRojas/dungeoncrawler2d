@@ -19,7 +19,7 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 	if avoid_chance > 0 and randi() % 100 < avoid_chance:
 		context.is_avoided = true
 		GlobalEventBus.dispatch("combat_log", {
-			"message": "%s's attack was avoided by %s!" % [source.name, target.name]
+			"message": "[color=cyan]AVOIDED![/color] %s dodged %s's %s" % [target.name, source.name, skill.skill_name]
 		})
 		# Fire avoid event for passives
 		target.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_RECEIVED_CALC, context)
@@ -29,7 +29,7 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 	var total_hit = skill.hit_chance + source.stats.get_stat(StatTypes.ACCURACY)
 	if randi() % 100 >= total_hit:
 		GlobalEventBus.dispatch("combat_log", {
-			"message": "%s's %s missed %s!" % [source.name, skill.skill_name, target.name]
+			"message": "[color=yellow]MISS![/color] %s's %s missed %s" % [source.name, skill.skill_name, target.name]
 		})
 		return
 
@@ -38,7 +38,7 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 	if parry_chance > 0 and randi() % 100 < parry_chance:
 		context.is_parry = true
 		GlobalEventBus.dispatch("combat_log", {
-			"message": "%s parried %s's attack!" % [target.name, source.name]
+			"message": "[color=orange]PARRIED![/color] %s deflected %s's %s" % [target.name, source.name, skill.skill_name]
 		})
 		# Fire parry event — ideal for Swordmanship passive
 		GlobalEventBus.dispatch("parry_success", {"entity": target, "attacker": source})
