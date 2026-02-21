@@ -480,3 +480,207 @@ public class StatsComponent
 Con este módulo, la entidad ya sabe atacar (`SkillController`), recibir daño (`StatsComponent`) y organizar eventos (`BattleEntity`). 
 
 Para completar este cuarteto de componentes, el siguiente paso lógico sería estructurar el **`EffectReceiver`** (el que maneja los Buffs/Debuffs y escucha las pasivas) o podemos pasar a cómo se vería la **Generación Procedural de Ítems**. ¿Cuál prefieres agregar a la especificación?
+
+### 9.5. EffectReceiver.cs (Gestor de Estados y Pasivas)
+Este módulo se encarga de recibir, almacenar y procesar alteraciones que no son permanentes (Buffs/Debuffs) y las habilidades Pasivas. Se conecta fuertemente al *Event Bus* de la `BattleEntity` para escuchar cuándo debe actuar.
+
+```csharp
+using System.Collections.Generic;
+using UnityEngine;
+
+public class EffectReceiver 
+{
+    private BattleEntity _owner;
+
+    // Listas de alteraciones activas
+    public List<StatusEffect> ActiveStatusEffects { get; private set; }
+    public List<PassiveAbility> ActivePassives { get; private set; }
+
+    public EffectReceiver(BattleEntity owner) 
+    {
+        _owner = owner;
+        ActiveStatusEffects = new List<StatusEffect>();
+        ActivePassives = new List<PassiveAbility>();
+
+        // Nos suscribimos al final del turno para reducir la duración de los Buffs/Debuffs
+        _owner.OnTurnEnd += TickEffects;
+    }
+
+    // --- GESTIÓN DE ESTADOS TEMPORALES (Buffs / Debuffs) ---
+    public void AddStatusEffect(StatusEffect effect) 
+    {
+        // Revisar si ya existe para acumularlo o reiniciar su duración
+        var existingEffect = ActiveStatusEffects.Find(e => e.ID == effect.ID);
+        if (existingEffect != null) 
+        {
+            existingEffect.Duration = effect.Duration; // Reinicia duración
+        } 
+        else 
+        {
+            ActiveStatusEffects.Add(effect);
+            effect.OnApply(_owner); // Aplica el efecto inicial (Ej. +10 STR temporal)
+        }
+    }
+
+    private void TickEffects() 
+    {
+        for (int i = ActiveStatusEffects.Count - 1; i >= 0; i--) 
+        {
+            var effect = ActiveStatusEffects[i];
+            effect.Duration--;
+
+            // Efectos DoT (Damage over Time) como Veneno actúan aquí
+            effect.OnTick(_owner); 
+
+            if (effect.Duration <= 0) 
+            {
+                effect.OnRemove(_owner); // Revierte el efecto (Ej. -10 STR)
+                ActiveStatusEffects.RemoveAt(i);
+            }
+        }
+    }
+
+    // --- GESTIÓN DE PASIVAS (Items, Clases, Enemigos) ---
+    public void AddPassive(PassiveAbility passive) 
+    {
+        ActivePassives.Add(passive);
+        passive.Initialize(_owner); // Aquí la pasiva se suscribe a los eventos necesarios
+    }
+
+    public void RemovePassive(PassiveAbility passive) 
+    {
+        passive.Dispose(); // Desuscribe la pasiva de los eventos para evitar memory leaks
+        ActivePassives.Remove(passive);
+    }
+}
+
+public class Passive_HardShield : PassiveAbility 
+{
+    private BattleEntity _owner;
+
+    // Se llama cuando el EffectReceiver añade la pasiva
+    public override void Initialize(BattleEntity owner) 
+    {
+        _owner = owner;
+        // Nos suscribimos al momento EXACTO antes de recibir daño
+        _owner.OnBeforeDamageTaken += ApplyShieldReduction;
+    }
+
+    private void ApplyShieldReduction(DamageInfo incomingDamage) 
+    {
+        // Si el ataque es penetrante, el Hard Shield no funciona (Regla del GDD)
+        if (incomingDamage.IsPenetrating) return;
+
+        // "Cuando el current Shield es al menos 1, el daño recibido se reduce 30%"
+        if (_owner.Stats.CurrentShield >= 1) 
+        {
+            float reductionAmount = incomingDamage.FinalDamage * 0.30f;
+            incomingDamage.FinalDamage -= reductionAmount;
+            
+            Debug.Log($"[Hard Shield] redujo el daño en {reductionAmount}. Daño restante: {incomingDamage.FinalDamage}");
+        }
+    }
+
+    // Se llama si el jugador se quita el ítem o cambia de clase
+    public override void Dispose() 
+    {
+        _owner.OnBeforeDamageTaken -= ApplyShieldReduction;
+    }
+}
+
+### Por qué esta estructura es tan útil:
+1. **Desacoplamiento:** El `StatsComponent` que hicimos antes no tiene idea de que "Hard Shield" existe. Simplemente recibe el `DamageInfo` modificado y hace la resta.
+2. **Fácil de expandir:** Si mañana quieres crear una pasiva llamada **Spiked Armor** (devuelve daño al ser atacado), solo creas una clase nueva `Passive_SpikedArmor`, te suscribes a `_owner.OnAfterDamageTaken`, y le haces daño al atacante. Cero modificaciones a tu código base.
+3. **Mantenimiento limpio:** Al usar `Dispose()`, te aseguras de que si un jugador cambia su "Casco" por otro, las pasivas del casco viejo dejan de escuchar los eventos y no causan bugs (memory leaks).
+
+### 9.7. ItemFactory.cs (Generación Procedural de Botín)
+El patrón *Factory* se utiliza para instanciar objetos únicos a partir de plantillas estáticas (`ItemData`). Al crear el objeto, la fábrica toma en cuenta el nivel de la mazmorra (piso actual) para calcular bonificaciones estadísticas aleatorias (RNG) e inyectar posibles efectos pasivos.
+
+
+
+```csharp
+using System.Collections.Generic;
+using UnityEngine;
+
+// La instancia "viva" del objeto que el jugador equipará
+public class ItemInstance 
+{
+    public ItemData BaseData { get; private set; }
+    
+    // Estadísticas finales calculadas (Base + RNG)
+    public float BonusSTR;
+    public float BonusINT;
+    public float BonusMAXHP;
+    
+    // Lista de pasivas que rodaron en este ítem específico
+    public List<PassiveAbility> RolledPassives;
+
+    public ItemInstance(ItemData data) 
+    {
+        BaseData = data;
+        RolledPassives = new List<PassiveAbility>();
+    }
+}
+
+// El sistema encargado de crear el botín
+public class ItemFactory 
+{
+    // Método principal llamado al abrir un cofre o matar un enemigo
+    public ItemInstance GenerateLoot(ItemData template, int currentFloor) 
+    {
+        // 1. Crear el contenedor vacío basado en la plantilla
+        ItemInstance newItem = new ItemInstance(template);
+
+        // 2. Asignar valores base de la plantilla (Ej. +10 INT fijos)
+        newItem.BonusSTR = template.BaseSTR;
+        newItem.BonusINT = template.BaseINT;
+        newItem.BonusMAXHP = template.BaseMAXHP;
+
+        // 3. Sistema RNG: Escalado por el piso actual
+        // A mayor piso, mayor es el pool de "puntos de mejora" a repartir
+        int statBudget = Random.Range(currentFloor, currentFloor * 3);
+        
+        // Repartir el presupuesto aleatoriamente entre los stats permitidos por el ítem
+        for (int i = 0; i < statBudget; i++) 
+        {
+            float roll = Random.value;
+            if (roll < 0.33f) newItem.BonusSTR += 1; // +1 de Fuerza extra
+            else if (roll < 0.66f) newItem.BonusINT += 1; // +1 de Inteligencia extra
+            else newItem.BonusMAXHP += 5; // +5 de Vida extra
+        }
+
+        // 4. Sistema RNG: Generación de Pasivas
+        // Los ítems legendarios siempre traen su pasiva única
+        if (template.Rarity == ItemRarity.Legendary && template.UniquePassive != null) 
+        {
+            newItem.RolledPassives.Add(CreatePassiveInstance(template.UniquePassive));
+        }
+        else 
+        {
+            // Probabilidad de obtener una pasiva común/poco común (Ej. Plating)
+            float passiveChance = 0.10f + (currentFloor * 0.02f); // Más chance en pisos altos
+            if (Random.value <= passiveChance) 
+            {
+                PassiveAbility randomPassive = GetRandomCommonPassive();
+                newItem.RolledPassives.Add(randomPassive);
+                Debug.Log($"¡El ítem generó la pasiva {randomPassive.Name}!");
+            }
+        }
+
+        return newItem;
+    }
+
+    // Método de soporte para instanciar la clase de la pasiva correcta
+    private PassiveAbility CreatePassiveInstance(PassiveData data) 
+    {
+        // En producción, esto usaría Reflexión o un Switch para retornar la clase correcta
+        // Ej: return new Passive_Plating();
+        return null; 
+    }
+
+    private PassiveAbility GetRandomCommonPassive() 
+    {
+        // Lógica para sacar una pasiva aleatoria del Pool (Ej. Supply Route, Avoid Critical)
+        return null;
+    }
+}

@@ -21,13 +21,27 @@ func initialize_from_base() -> void:
 	current.clear()
 	for key in base:
 		current[key] = base[key]
+	# Fill resource bars from their max values
+	if base.has(StatTypes.MAX_SHIELD) and not base.has(StatTypes.SHIELD):
+		current[StatTypes.SHIELD] = base[StatTypes.MAX_SHIELD]
 
 const DEFAULTS = {
 	StatTypes.HP: 10,
 	StatTypes.MAX_HP: 10,
 	StatTypes.STRENGTH: 5,
+	StatTypes.DEXTERITY: 5,
+	StatTypes.INTELLIGENCE: 5,
+	StatTypes.PIETY: 5,
+	StatTypes.POWER: 0,
 	StatTypes.SPEED: 5,
-	StatTypes.DEFENSE: 0
+	StatTypes.DEFENSE: 0,
+	StatTypes.SHIELD: 0,
+	StatTypes.MAX_SHIELD: 0,
+	StatTypes.CRIT_CHANCE: 5, # 5% base crit
+	StatTypes.CRIT_DAMAGE: 150, # 1.5x crit multiplier
+	StatTypes.PARRY_CHANCE: 0,
+	StatTypes.AVOID_CHANCE: 0,
+	StatTypes.ACCURACY: 0,
 }
 
 # --- Core Calculation Logic ---
@@ -111,6 +125,15 @@ func modify_current(stat_type: StringName, amount: int) -> void:
 	
 	# Clamp logic
 	if stat_type == StatTypes.HP:
-		var max_hp = get_stat(StatTypes.MAX_HP) # Recalculates total max hp
+		var max_hp = get_stat(StatTypes.MAX_HP)
 		if max_hp > 0:
 			current[stat_type] = clampi(current[stat_type], 0, max_hp)
+	elif stat_type == StatTypes.SHIELD:
+		var max_shield = get_stat(StatTypes.MAX_SHIELD)
+		if max_shield > 0:
+			current[stat_type] = clampi(current[stat_type], 0, max_shield)
+
+# Restore shield to 100% after battle (GameSpec rule)
+func reset_shield() -> void:
+	var max_shield = get_stat(StatTypes.MAX_SHIELD)
+	current[StatTypes.SHIELD] = max_shield
