@@ -118,7 +118,8 @@ func _process_room_event(node: MapNode) -> void:
 			_log("Encountered %s! Starting Combat." % type_name)
 			_start_combat(node)
 		MapNode.Type.CHEST:
-			_log("Found a Chest! (Loot not implemented)")
+			_log("Found a Chest!")
+			_process_chest_loot()
 			dungeon_manager.complete_current_room()
 			call_deferred("_on_room_completed")
 		MapNode.Type.EVENT:
@@ -152,6 +153,8 @@ func _on_battle_ended(result: TurnManager.Phase) -> void:
 		_log("Victory! Proceeding.")
 		# Reset shield after battle (GameSpec §3)
 		player_entity.stats.reset_shield()
+		# Generate loot from the enemy
+		_process_combat_loot()
 		dungeon_manager.complete_current_room()
 		await get_tree().create_timer(1.0).timeout
 		_on_room_completed()
@@ -174,6 +177,48 @@ func _on_damage_event(data: Dictionary) -> void:
 	if target:
 		var is_player = (target == player_entity)
 		game_ui.update_hp(target, is_player)
+
+# --- LOOT PROCESSING ---
+
+func _process_combat_loot() -> void:
+	var current_room = dungeon_manager.current_room
+	var is_elite = current_room and current_room.type == MapNode.Type.ELITE
+	var is_boss = current_room and current_room.type == MapNode.Type.BOSS
+	var dungeon_floor = dungeon_manager.current_floor
+	
+	var rewards = LootSystem.generate_enemy_loot(dungeon_floor, is_elite, is_boss)
+	
+	if rewards.is_empty():
+		_log("No loot dropped.")
+		return
+	
+	for reward in rewards:
+		if reward.type == RewardResource.Type.EQUIPMENT and reward.equipment:
+			var equipped = RewardApplier.try_auto_equip(player_entity, reward.equipment)
+			if equipped:
+				_log("Equipped: %s [%s]" % [reward.equipment.display_name, reward.equipment.rarity])
+				game_ui.update_hp(player_entity, true) # Refresh stats display
+			else:
+				_log("Found: %s [%s] (current gear is better)" % [reward.equipment.display_name, reward.equipment.rarity])
+		else:
+			RewardApplier.apply_reward(player_entity, reward)
+			_log("Gained: %s" % reward.get_display_name())
+
+func _process_chest_loot() -> void:
+	var dungeon_floor = dungeon_manager.current_floor
+	var rewards = LootSystem.generate_chest_loot(dungeon_floor)
+	
+	for reward in rewards:
+		if reward.type == RewardResource.Type.EQUIPMENT and reward.equipment:
+			var equipped = RewardApplier.try_auto_equip(player_entity, reward.equipment)
+			if equipped:
+				_log("Equipped: %s [%s]" % [reward.equipment.display_name, reward.equipment.rarity])
+				game_ui.update_hp(player_entity, true)
+			else:
+				_log("Found: %s [%s] (current gear is better)" % [reward.equipment.display_name, reward.equipment.rarity])
+		else:
+			RewardApplier.apply_reward(player_entity, reward)
+			_log("Gained: %s" % reward.get_display_name())
 
 func _log(msg: String) -> void:
 	# game_ui.add_log already prints to console, so we don't need print(msg) here

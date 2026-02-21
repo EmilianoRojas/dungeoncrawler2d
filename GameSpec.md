@@ -144,543 +144,441 @@ Todas las pasivas del juego funcionan suscribiéndose a estos eventos para alter
 5. `OnDamageDealt`: Disparado desde la perspectiva del atacante tras impactar. (Ideal para *Weaken* o Robo de Vida).
 6. `OnEntityDeath`: Se dispara si el HP llega a 0.
 
-## 9. Estructura de Clases Core (Code Implementation)
+## 9. Estructura de Clases Core (Implementación en GDScript)
 
+A continuación, se define la estructura en código (GDScript / Godot 4) de la entidad principal y sus componentes, demostrando la arquitectura basada en composición y el uso del *Event Bus*.
 
-
-A continuación, se define la estructura en código (C#) de la entidad principal y su controlador de habilidades, demostrando la arquitectura basada en componentes y el uso del *Event Bus*.
-
-### 9.1. BattleEntity.cs (El Nodo Principal)
+### 9.1. Entity (El Nodo Principal)
 Esta clase actúa como el "cerebro" central que mantiene unidos todos los módulos. No calcula daño por sí misma, sino que delega las tareas a sus componentes.
 
-```csharp
-using System;
-using System.Collections.Generic;
+```gdscript
+class_name Entity
+extends Node
 
-public class BattleEntity 
-{
-    // Identificación
-    public string EntityName;
-    public bool IsPlayer;
+enum Team { PLAYER, ENEMY }
 
-    // --- COMPONENTES ---
-    // Referencias a los módulos que construyen la entidad
-    public StatsComponent Stats { get; private set; }
-    public SkillController Skills { get; private set; }
-    public EffectReceiver Effects { get; private set; }
-    public EquipmentManager Equipment { get; private set; }
+var initialized: bool = false
+@export var team: Team = Team.ENEMY
 
-    // --- EVENT BUS LOCAL ---
-    // Ganchos a los que las pasivas y habilidades pueden suscribirse
-    public event Action OnBattleStart;
-    public event Action OnTurnStart;
-    public event Action OnTurnEnd;
-    public event Action<DamageInfo> OnBeforeDamageTaken;
-    public event Action<DamageInfo> OnAfterDamageTaken;
-    public event Action OnEntityDeath;
-    public event Action OnParrySuccess;
+# --- COMPONENTES ---
+var stats: StatsComponent
+var effects: EffectManager
+var skills: SkillManager
+var equipment: EquipmentComponent
+var skill_component: SkillComponent
+var passives: PassiveEffectComponent
 
-    // Inicialización (Inyección de dependencias y datos)
-    public void Initialize(EntityTemplate template) 
-    {
-        // Instanciar componentes
-        Stats = new StatsComponent(this);
-        Skills = new SkillController(this);
-        Effects = new EffectReceiver(this);
-        
-        if (IsPlayer) {
-            Equipment = new EquipmentManager(this);
-        }
+func _ready() -> void:
+	if not initialized:
+		initialize()
 
-        // Cargar datos base desde el template (Clase o Enemigo)
-        Stats.LoadBaseStats(template);
-        Skills.LoadInitialSkills(template.StartingSkills);
-    }
+func initialize() -> void:
+	if initialized: return
+	
+	# Instanciar componentes
+	stats = StatsComponent.new()
+	effects = EffectManager.new(self)
+	skills = SkillManager.new(self)
+	skill_component = SkillComponent.new(self)
+	passives = PassiveEffectComponent.new()
+	equipment = EquipmentComponent.new()
+	equipment.initialize(self)
+	
+	# Conectar dependencias del EquipmentComponent
+	equipment.stats_component = stats
+	equipment.skill_component = skill_component
+	equipment.passive_effect_component = passives
+	
+	initialized = true
 
-    // Métodos para disparar los eventos desde el Game Manager o Combate
-    public void TriggerTurnStart() => OnTurnStart?.Invoke();
-    public void TriggerTurnEnd() => OnTurnEnd?.Invoke();
-    public void TriggerParry() => OnParrySuccess?.Invoke();
-    
-    // El flujo de recibir daño
-    public void TakeDamage(DamageInfo incomingDamage) 
-    {
-        // 1. Las pasivas pueden modificar el daño entrante aquí (Ej. Hard Shield)
-        OnBeforeDamageTaken?.Invoke(incomingDamage);
+# Cargar datos desde ClassData (Warrior, Wizard, etc.)
+func apply_class(class_data: ClassData) -> void:
+	for key in class_data.base_stats:
+		if key is StringName:
+			stats.set_base_stat(StringName(key), class_data.base_stats[key])
+	stats.finalize_initialization()
+	for s in class_data.starting_skills:
+		skills.learn_skill(s)
 
-        // 2. El StatsComponent procesa la reducción matemática de HP/Shield
-        Stats.ApplyDamage(incomingDamage);
+func is_alive() -> bool:
+	return stats.current.get(StatTypes.HP, 0) > 0
 
-        // 3. Las pasivas pueden reaccionar al daño recibido (Ej. Counter)
-        OnAfterDamageTaken?.Invoke(incomingDamage);
+# AI simple para enemigos (se puede sobreescribir o delegar a un AIController)
+func decide_action(context: Dictionary = {}) -> Action:
+	if team == Team.ENEMY and skills.known_skills.size() > 0:
+		var skill = skills.known_skills[0]
+		var target = context.get("target")
+		if target:
+			var action = AttackAction.new(self, target)
+			action.skill_reference = skill
+			return action
+	return null
+```
 
-        // 4. Comprobar muerte
-        if (Stats.CurrentHP <= 0) {
-            OnEntityDeath?.Invoke();
-        }
-    }
+### 9.2. SkillManager (Controlador de Habilidades)
+Maneja la lista de habilidades aprendidas y sus cooldowns.
+
+```gdscript
+class_name SkillManager
+extends Object
+
+var owner: Entity
+var known_skills: Array[Skill] = []
+var cooldowns: Dictionary = {} # Skill -> remaining_turns
+var max_skill_slots: int = 4
+
+func _init(entity: Entity):
+	owner = entity
+
+func learn_skill(skill: Skill) -> bool:
+	# Si ya la tiene, sube de nivel (Skill Draft merge)
+	for existing in known_skills:
+		if existing.skill_name == skill.skill_name:
+			# TODO: Skill level up logic
+			return true
+	
+	if known_skills.size() < max_skill_slots:
+		known_skills.append(skill)
+		cooldowns[skill] = 0
+		return true
+	return false # Slots llenos → Draft UI
+
+func is_ready(skill: Skill) -> bool:
+	return cooldowns.get(skill, 0) <= 0
+
+func start_cooldown(skill: Skill) -> void:
+	cooldowns[skill] = skill.max_cooldown
+
+func reduce_cooldowns(amount: int = 1) -> void:
+	for skill in cooldowns:
+		cooldowns[skill] = max(0, cooldowns[skill] - amount)
+```
+
+### 9.3. CombatContext y Skill (Estructuras de Datos de Combate)
+El `CombatContext` viaja por todo el pipeline de daño. El `Skill` es un Resource con datos de escalado.
+
+```gdscript
+# --- CombatContext: paquete de datos que viaja por el pipeline ---
+class_name CombatContext
+extends RefCounted
+
+var source: Entity
+var target: Entity
+var skill: Skill
+
+var damage: int = 0
+var is_crit: bool = false
+var is_kill: bool = false
+var is_parry: bool = false
+var is_avoided: bool = false
+var is_penetrating: bool = false
+var heal_amount: int = 0
+var ignore_defense: bool = false
+var stored_damage: int = 0
+var effect_instance: EffectInstance = null
+var raw_data: Dictionary = {}
+
+func _init(p_source: Entity = null, p_target: Entity = null, p_skill: Skill = null):
+	source = p_source
+	target = p_target
+	skill = p_skill
+```
+
+```gdscript
+# --- Skill: recurso estático que define la habilidad ---
+class_name Skill
+extends Resource
+
+enum ScalingType { FLAT, STAT_PERCENT }
+
+@export var skill_name: String = "Skill"
+@export var scaling_type: ScalingType = ScalingType.STAT_PERCENT
+@export var scaling_stat: StringName = StatTypes.STRENGTH
+@export var scaling_percent: float = 1.0 # 1.0 = 100%
+@export var on_cast_effects: Array[EffectResource] = [] # Efectos al casteador
+@export var on_hit_effects: Array[EffectResource] = [] # Efectos al objetivo
+@export var base_power: int = 0
+@export var max_cooldown: int = 0 # Turnos de cooldown
+@export var hit_chance: int = 90 # 90 = 90% precisión base
+@export var ignores_shield: bool = false # Penetrating: salta el Shield
+```
+
+### 9.4. StatsComponent (Gestor de Estadísticas y Salud)
+Este componente almacena valores base, current y modificadores temporales. Usa `StringName` keys de `StatTypes` para máxima flexibilidad. Los modificadores soportan FLAT, PERCENT_ADD y MULTIPLIER.
+
+```gdscript
+class_name StatsComponent
+extends Resource
+
+@export var base: Dictionary[StringName, int] = {}
+var current: Dictionary[StringName, int] = {}
+var modifiers: Dictionary = {} # StringName -> Array[StatModifierInstance]
+
+# Valores por defecto si no se asignan en el ClassData/EnemyTemplate
+const DEFAULTS = {
+	StatTypes.HP: 10, StatTypes.MAX_HP: 10,
+	StatTypes.STRENGTH: 5, StatTypes.DEXTERITY: 5,
+	StatTypes.INTELLIGENCE: 5, StatTypes.PIETY: 5, StatTypes.POWER: 0,
+	StatTypes.SPEED: 5, StatTypes.DEFENSE: 0,
+	StatTypes.SHIELD: 0, StatTypes.MAX_SHIELD: 0,
+	StatTypes.CRIT_CHANCE: 5, StatTypes.CRIT_DAMAGE: 150,
+	StatTypes.PARRY_CHANCE: 0, StatTypes.AVOID_CHANCE: 0, StatTypes.ACCURACY: 0,
 }
 
-using System.Collections.Generic;
-using System.Linq;
+func finalize_initialization() -> void:
+	current.clear()
+	for key in base:
+		current[key] = base[key]
+	if base.has(StatTypes.MAX_SHIELD) and not base.has(StatTypes.SHIELD):
+		current[StatTypes.SHIELD] = base[StatTypes.MAX_SHIELD]
 
-public class SkillController 
-{
-    private BattleEntity _owner;
-    
-    // Lista de habilidades equipadas actualmente (Instancias vivas)
-    public List<SkillInstance> EquippedSkills { get; private set; }
-    
-    // Límite máximo de habilidades que puede tener la entidad
-    public int MaxSkillSlots = 4;
+# Fórmula: (Base + Flat) * (1 + %Add) * Mult
+func get_stat(stat_type: StringName) -> int:
+	var base_val = base.get(stat_type, DEFAULTS.get(stat_type, 0))
+	var flat = 0.0; var percent_add = 0.0; var mult = 1.0
+	if modifiers.has(stat_type):
+		for mod_instance in modifiers[stat_type]:
+			match mod_instance.resource.type:
+				StatModifier.Type.FLAT: flat += mod_instance.resource.value
+				StatModifier.Type.PERCENT_ADD: percent_add += mod_instance.resource.value
+				StatModifier.Type.MULTIPLIER: mult *= mod_instance.resource.value
+	return int((base_val + flat) * (1.0 + percent_add) * mult)
 
-    public SkillController(BattleEntity owner) 
-    {
-        _owner = owner;
-        EquippedSkills = new List<SkillInstance>();
-    }
+func get_current(stat_type: StringName) -> int:
+	return current.get(stat_type, DEFAULTS.get(stat_type, 0))
 
-    // Carga las habilidades iniciales desde el Data Template
-    public void LoadInitialSkills(List<SkillData> startingSkills) 
-    {
-        foreach(var skillData in startingSkills) 
-        {
-            AddSkill(skillData);
-        }
-    }
+func set_base_stat(stat_type: StringName, value: int) -> void:
+	base[stat_type] = value
 
-    // Agregar una nueva habilidad (Ej. Al subir de nivel)
-    public bool AddSkill(SkillData newSkillData) 
-    {
-        // Comprobar si ya la tenemos para subirla de nivel
-        var existingSkill = EquippedSkills.FirstOrDefault(s => s.Data.ID == newSkillData.ID);
-        if (existingSkill != null) 
-        {
-            existingSkill.LevelUp();
-            return true;
-        }
+func modify_current(stat_type: StringName, amount: int) -> void:
+	var current_val = current.get(stat_type, DEFAULTS.get(stat_type, 0))
+	current[stat_type] = current_val + amount
+	# Clamp a los máximos correspondientes
+	if stat_type == StatTypes.HP:
+		current[stat_type] = clampi(current[stat_type], 0, get_stat(StatTypes.MAX_HP))
+	elif stat_type == StatTypes.SHIELD:
+		current[stat_type] = clampi(current[stat_type], 0, get_stat(StatTypes.MAX_SHIELD))
 
-        // Si hay espacio, la añadimos como una nueva instancia
-        if (EquippedSkills.Count < MaxSkillSlots) 
-        {
-            EquippedSkills.Add(new SkillInstance(newSkillData));
-            return true;
-        }
-
-        // Si no hay espacio, la UI deberá manejar el reemplazo (Draft UI)
-        return false; 
-    }
-
-    // Ejecutar una habilidad contra un objetivo
-    public void CastSkill(int skillIndex, BattleEntity target) 
-    {
-        if (skillIndex < 0 || skillIndex >= EquippedSkills.Count) return;
-
-        SkillInstance skillToCast = EquippedSkills[skillIndex];
-
-        if (!skillToCast.IsReady()) return; // Comprueba Cooldown
-
-        // Calcular daño base sumando el escalado (Ej. STR) y el atributo POW del _owner
-        DamageInfo damagePackage = CalculateDamage(skillToCast);
-
-        // Enviar el paquete de daño al objetivo
-        target.TakeDamage(damagePackage);
-
-        // Aplicar el Cooldown a la habilidad recién usada
-        skillToCast.StartCooldown();
-    }
-
-    // Reducir los Cooldowns al inicio del turno (o mediante pasivas como Counter)
-    public void ReduceCooldowns(int amount = 1) 
-    {
-        foreach(var skill in EquippedSkills) 
-        {
-            skill.ReduceCooldown(amount);
-        }
-    }
-
-    // Cálculo interno de daño basado en los Stats del dueño y el escalado de la habilidad
-    private DamageInfo CalculateDamage(SkillInstance skill) 
-    {
-        DamageInfo info = new DamageInfo();
-        
-        // Ejemplo matemático: Daño Base de la habilidad + (Atributo Escalar * %) + POW
-        // Si la habilidad escala con STR (Attack, Tornado Slash)
-        float statBonus = _owner.Stats.STR * skill.Data.ScalingPercentage;
-        
-        info.RawDamage = skill.Data.BaseDamage + statBonus + _owner.Stats.POW;
-        info.HitChance = skill.Data.BaseHit + _owner.Stats.ExtraAccuracy;
-        info.IsPenetrating = skill.Data.IgnoresShield; // Para evadir el Shield
-        
-        return info;
-    }
-}
-
-// Estructura que viaja desde el atacante hasta el defensor
-public class DamageInfo 
-{
-    public float RawDamage;
-    public float FinalDamage; // Modificado por pasivas/defensa
-    public float HitChance;
-    public bool IsCritical;
-    public bool IsPenetrating; // Si es true, ignora el Shield
-}
-
-// Representa una habilidad "viva" en combate
-public class SkillInstance 
-{
-    public SkillData Data { get; private set; } // Referencia al Data Template
-    public int CurrentLevel { get; private set; }
-    public int CurrentCooldown { get; private set; }
-
-    public SkillInstance(SkillData data) 
-    {
-        Data = data;
-        CurrentLevel = 1;
-        CurrentCooldown = 0;
-    }
-
-    public void LevelUp() => CurrentLevel++;
-    public bool IsReady() => CurrentCooldown <= 0;
-    public void StartCooldown() => CurrentCooldown = Data.BaseCooldown;
-    
-    public void ReduceCooldown(int amount) 
-    {
-        CurrentCooldown -= amount;
-        if (CurrentCooldown < 0) CurrentCooldown = 0;
-    }
-}
-
-### 9.4. StatsComponent.cs (Gestor de Estadísticas y Salud)
-Este componente almacena los valores actuales y máximos de la entidad. También contiene la lógica de resolución de daño (HP vs. Shield) y permite que otros sistemas (como los ítems equipados) modifiquen las estadísticas base.
-
-
-
-```csharp
-using System;
-using UnityEngine; // O el equivalente matemático en tu motor (Mathf)
-
-public class StatsComponent 
-{
-    private BattleEntity _owner;
-
-    // --- ATRIBUTOS PRINCIPALES ---
-    // (Se pueden dividir en Base y Modificados para manejar los buffs temporales)
-    public float STR { get; set; }
-    public float DEX { get; set; }
-    public float INT { get; set; }
-    public float PIE { get; set; }
-    public float POW { get; set; }
-
-    // --- ATRIBUTOS DE SUPERVIVENCIA ---
-    public float MAXHP { get; set; }
-    public float CurrentHP { get; set; }
-
-    public float MaxShield { get; set; }
-    public float CurrentShield { get; set; }
-
-    // --- ATRIBUTOS DE COMBATE ---
-    public float CritChance { get; set; }
-    public float CritDamage { get; set; }
-    public float ParryChance { get; set; }
-    public float AvoidChance { get; set; }
-    public float ExtraAccuracy { get; set; }
-
-    public StatsComponent(BattleEntity owner) 
-    {
-        _owner = owner;
-    }
-
-    // Inicializa las estadísticas desde la plantilla base
-    public void LoadBaseStats(EntityTemplate template) 
-    {
-        STR = template.BaseSTR;
-        DEX = template.BaseDEX;
-        INT = template.BaseINT;
-        PIE = template.BasePIE;
-        POW = template.BasePOW;
-        
-        MAXHP = template.BaseMAXHP;
-        MaxShield = template.BaseShield; // Algunas clases/enemigos empiezan sin escudo
-
-        CritChance = template.BaseCritChance;
-        CritDamage = template.BaseCritDamage;
-        ParryChance = template.BaseParryChance;
-        AvoidChance = template.BaseAvoidChance;
-
-        // Llenar las barras al iniciar
-        CurrentHP = MAXHP;
-        CurrentShield = MaxShield;
-    }
-
-    // Restaurar escudo al 100% después de cada batalla (regla del GDD)
-    public void ResetShieldAfterBattle() 
-    {
-        CurrentShield = MaxShield;
-    }
-
-    // Curación normal de HP
-    public void Heal(float amount) 
-    {
-        CurrentHP += amount;
-        if (CurrentHP > MAXHP) CurrentHP = MAXHP;
-    }
-
-    // --- LÓGICA CORE DE DAÑO ---
-    // Resuelve matemáticamente cómo impacta el daño en las barras
-    public void ApplyDamage(DamageInfo info) 
-    {
-        float damageToDeal = info.FinalDamage;
-
-        // Si el ataque tiene Penetration, ignora el Shield y va directo a la vida
-        if (info.IsPenetrating) 
-        {
-            CurrentHP -= damageToDeal;
-            Debug.Log($"{_owner.EntityName} recibió {damageToDeal} de daño penetrante directo al HP!");
-        } 
-        else 
-        {
-            // Daño normal: Primero golpea el Shield
-            if (CurrentShield > 0) 
-            {
-                if (damageToDeal <= CurrentShield) 
-                {
-                    // El escudo absorbe todo el daño
-                    CurrentShield -= damageToDeal;
-                    damageToDeal = 0; 
-                    Debug.Log($"El escudo de {_owner.EntityName} absorbió el ataque.");
-                } 
-                else 
-                {
-                    // El daño rompe el escudo y sobra
-                    damageToDeal -= CurrentShield;
-                    CurrentShield = 0;
-                    Debug.Log($"¡El escudo de {_owner.EntityName} se rompió!");
-                }
-            }
-
-            // Si quedó daño remanente (o no había escudo), va al HP
-            if (damageToDeal > 0) 
-            {
-                CurrentHP -= damageToDeal;
-                Debug.Log($"{_owner.EntityName} recibió {damageToDeal} de daño al HP.");
-            }
-        }
-
-        // Prevenir que el HP baje de 0
-        if (CurrentHP < 0) CurrentHP = 0;
-    }
-}
+# Restaurar escudo al 100% después de cada batalla (regla del GDD)
+func reset_shield() -> void:
+	current[StatTypes.SHIELD] = get_stat(StatTypes.MAX_SHIELD)
+```
 
 ### Notas sobre el diseño:
-1. **Spillover (Daño sobrante):** La lógica de `damageToDeal -= CurrentShield` asegura que si tienes 10 de Escudo y recibes 50 de daño, el escudo se rompe (0) y los 40 restantes pasan a tu HP real. Esto evita que un escudo de 1 HP bloquee un ataque nuclear.
-2. **Penetration:** Un simple `if (info.IsPenetrating)` desvía todo el cálculo directamente a la variable `CurrentHP`, saltándose el bloque del escudo. ¡Súper limpio y fácil de leer!
-3. **Restauración:** Como indicaste en las reglas, el método `ResetShieldAfterBattle()` se llamaría desde tu *GameManager* o *RoomManager* justo cuando termina el combate, dejándolo listo para la siguiente sala.
+1. **StringName Keys:** Usar `StatTypes.STRENGTH` etc. permite crear stats nuevas sin modificar enums.
+2. **Modificadores en capas:** FLAT → PERCENT_ADD → MULTIPLIER se aplican en orden para buffs/debuffs/equipo.
+3. **Spillover de Shield:** La lógica de absorción está en `CombatSystem.deal_damage()`, no aquí.
+4. **Restauración:** `reset_shield()` se llama desde el `GameLoop` al terminar cada combate.
 
-Con este módulo, la entidad ya sabe atacar (`SkillController`), recibir daño (`StatsComponent`) y organizar eventos (`BattleEntity`). 
+### 9.5. EffectManager (Gestor de Efectos y Pasivas)
+Este módulo administra los efectos activos (Buffs, Debuffs, DoTs, Pasivas). Los efectos se definen como `EffectResource` y se instancian como `EffectInstance`. La ejecución de operaciones se delega a `OperationExecutor`.
 
-Para completar este cuarteto de componentes, el siguiente paso lógico sería estructurar el **`EffectReceiver`** (el que maneja los Buffs/Debuffs y escucha las pasivas) o podemos pasar a cómo se vería la **Generación Procedural de Ítems**. ¿Cuál prefieres agregar a la especificación?
+```gdscript
+class_name EffectManager
+extends Object
 
-### 9.5. EffectReceiver.cs (Gestor de Estados y Pasivas)
-Este módulo se encarga de recibir, almacenar y procesar alteraciones que no son permanentes (Buffs/Debuffs) y las habilidades Pasivas. Se conecta fuertemente al *Event Bus* de la `BattleEntity` para escuchar cuándo debe actuar.
+var owner: Entity
+var effects: Array[EffectInstance] = []
 
-```csharp
-using System.Collections.Generic;
-using UnityEngine;
+func _init(entity: Entity):
+	owner = entity
 
-public class EffectReceiver 
-{
-    private BattleEntity _owner;
+func apply_effect(effect_res: EffectResource) -> void:
+	var existing = _find_instance(effect_res.effect_id)
+	if existing == null:
+		effects.append(EffectInstance.new(effect_res))
+		return
+	# Manejo de stacking según la regla del EffectResource
+	match effect_res.stack_rule:
+		EffectResource.StackRule.ADD:
+			existing.stacks = min(existing.stacks + 1, effect_res.max_stacks)
+			existing.remaining_turns = effect_res.duration_turns
+		EffectResource.StackRule.REFRESH:
+			existing.remaining_turns = effect_res.duration_turns
+		EffectResource.StackRule.REPLACE:
+			effects.erase(existing)
+			effects.append(EffectInstance.new(effect_res))
+		EffectResource.StackRule.IGNORE:
+			pass
 
-    // Listas de alteraciones activas
-    public List<StatusEffect> ActiveStatusEffects { get; private set; }
-    public List<PassiveAbility> ActivePassives { get; private set; }
+func tick_all() -> void:
+	for instance in effects:
+		instance.tick_duration()
+	# Remover expirados
+	var active: Array[EffectInstance] = []
+	for instance in effects:
+		if not instance.is_expired():
+			active.append(instance)
+	effects = active
 
-    public EffectReceiver(BattleEntity owner) 
-    {
-        _owner = owner;
-        ActiveStatusEffects = new List<StatusEffect>();
-        ActivePassives = new List<PassiveAbility>();
+# Despacha un trigger a todos los efectos que lo escuchen
+func dispatch(trigger: EffectResource.Trigger, context: Variant) -> void:
+	var combat_context: CombatContext
+	if context is CombatContext:
+		combat_context = context
+	elif context is Dictionary:
+		combat_context = CombatContext.new()
+		combat_context.raw_data = context
+	else:
+		return
+	for instance in effects:
+		if instance.resource.trigger == trigger:
+			OperationExecutor.execute(instance, owner, combat_context)
+```
 
-        // Nos suscribimos al final del turno para reducir la duración de los Buffs/Debuffs
-        _owner.OnTurnEnd += TickEffects;
-    }
+### 9.6. EffectResource (Definición de Datos de Efecto)
+Cada efecto es un `Resource` con trigger, operation, stacking y duración. Los `.tres` se crean en el editor.
 
-    // --- GESTIÓN DE ESTADOS TEMPORALES (Buffs / Debuffs) ---
-    public void AddStatusEffect(StatusEffect effect) 
-    {
-        // Revisar si ya existe para acumularlo o reiniciar su duración
-        var existingEffect = ActiveStatusEffects.Find(e => e.ID == effect.ID);
-        if (existingEffect != null) 
-        {
-            existingEffect.Duration = effect.Duration; // Reinicia duración
-        } 
-        else 
-        {
-            ActiveStatusEffects.Add(effect);
-            effect.OnApply(_owner); // Aplica el efecto inicial (Ej. +10 STR temporal)
-        }
-    }
+```gdscript
+class_name EffectResource
+extends Resource
 
-    private void TickEffects() 
-    {
-        for (int i = ActiveStatusEffects.Count - 1; i >= 0; i--) 
-        {
-            var effect = ActiveStatusEffects[i];
-            effect.Duration--;
+@export var effect_id: StringName = ""
 
-            // Efectos DoT (Damage over Time) como Veneno actúan aquí
-            effect.OnTick(_owner); 
-
-            if (effect.Duration <= 0) 
-            {
-                effect.OnRemove(_owner); // Revierte el efecto (Ej. -10 STR)
-                ActiveStatusEffects.RemoveAt(i);
-            }
-        }
-    }
-
-    // --- GESTIÓN DE PASIVAS (Items, Clases, Enemigos) ---
-    public void AddPassive(PassiveAbility passive) 
-    {
-        ActivePassives.Add(passive);
-        passive.Initialize(_owner); // Aquí la pasiva se suscribe a los eventos necesarios
-    }
-
-    public void RemovePassive(PassiveAbility passive) 
-    {
-        passive.Dispose(); // Desuscribe la pasiva de los eventos para evitar memory leaks
-        ActivePassives.Remove(passive);
-    }
+enum Trigger {
+	ON_SKILL_CAST,
+	ON_PRE_DAMAGE_CALC, ON_DAMAGE_CALCULATED,
+	ON_DAMAGE_RECEIVED_CALC, ON_PRE_DAMAGE_APPLY,
+	ON_DAMAGE_DEALT, ON_DAMAGE_TAKEN,
+	ON_KILL, ON_DEATH, ON_HEAL_RECEIVED,
+	ON_TURN_START, ON_TURN_END
 }
 
-public class Passive_HardShield : PassiveAbility 
-{
-    private BattleEntity _owner;
-
-    // Se llama cuando el EffectReceiver añade la pasiva
-    public override void Initialize(BattleEntity owner) 
-    {
-        _owner = owner;
-        // Nos suscribimos al momento EXACTO antes de recibir daño
-        _owner.OnBeforeDamageTaken += ApplyShieldReduction;
-    }
-
-    private void ApplyShieldReduction(DamageInfo incomingDamage) 
-    {
-        // Si el ataque es penetrante, el Hard Shield no funciona (Regla del GDD)
-        if (incomingDamage.IsPenetrating) return;
-
-        // "Cuando el current Shield es al menos 1, el daño recibido se reduce 30%"
-        if (_owner.Stats.CurrentShield >= 1) 
-        {
-            float reductionAmount = incomingDamage.FinalDamage * 0.30f;
-            incomingDamage.FinalDamage -= reductionAmount;
-            
-            Debug.Log($"[Hard Shield] redujo el daño en {reductionAmount}. Daño restante: {incomingDamage.FinalDamage}");
-        }
-    }
-
-    // Se llama si el jugador se quita el ítem o cambia de clase
-    public override void Dispose() 
-    {
-        _owner.OnBeforeDamageTaken -= ApplyShieldReduction;
-    }
+enum Operation {
+	ADD_DAMAGE, ADD_DAMAGE_PERCENT, MULTIPLY_DAMAGE, SET_DAMAGE,
+	REDUCE_DAMAGE_FLAT, REDUCE_DAMAGE_PERCENT, ABSORB_DAMAGE,
+	CLAMP_MIN_DAMAGE, CLAMP_MAX_DAMAGE,
+	CONVERT_TO_TRUE_DAMAGE, STORE_DAMAGE,
+	ADD_STAT_MODIFIER, HEAL
 }
 
-### Por qué esta estructura es tan útil:
-1. **Desacoplamiento:** El `StatsComponent` que hicimos antes no tiene idea de que "Hard Shield" existe. Simplemente recibe el `DamageInfo` modificado y hace la resta.
-2. **Fácil de expandir:** Si mañana quieres crear una pasiva llamada **Spiked Armor** (devuelve daño al ser atacado), solo creas una clase nueva `Passive_SpikedArmor`, te suscribes a `_owner.OnAfterDamageTaken`, y le haces daño al atacante. Cero modificaciones a tu código base.
-3. **Mantenimiento limpio:** Al usar `Dispose()`, te aseguras de que si un jugador cambia su "Casco" por otro, las pasivas del casco viejo dejan de escuchar los eventos y no causan bugs (memory leaks).
+@export var trigger: Trigger
+@export var operation: Operation
+@export var stat_modifier: StatModifier # Para ADD_STAT_MODIFIER
+@export var value: float = 0.0
+@export var stat_type: StringName = ""
+@export var proc_chance: float = 1.0
+@export var conditions: Array[EffectCondition] = []
 
-### 9.7. ItemFactory.cs (Generación Procedural de Botín)
-El patrón *Factory* se utiliza para instanciar objetos únicos a partir de plantillas estáticas (`ItemData`). Al crear el objeto, la fábrica toma en cuenta el nivel de la mazmorra (piso actual) para calcular bonificaciones estadísticas aleatorias (RNG) e inyectar posibles efectos pasivos.
+enum StackRule { ADD, REFRESH, REPLACE, IGNORE }
+@export var stack_rule: StackRule = StackRule.ADD
+@export var max_stacks: int = 99
+@export var duration_turns: int = -1 # -1 = infinito
+```
 
+### Por qué esta estructura es útil:
+1. **Data-Driven:** Las pasivas como *Hard Shield* se implementan como archivos `.tres` con trigger `ON_DAMAGE_RECEIVED_CALC` y operation `REDUCE_DAMAGE_PERCENT`, sin código custom.
+2. **Desacoplamiento:** `StatsComponent` no sabe qué efectos existen. Solo recibe el daño ya modificado.
+3. **Fácil de expandir:** Nuevas pasivas como *Spiked Armor* se crean como otro `.tres` con trigger `ON_DAMAGE_TAKEN` y operation `ADD_DAMAGE` hacia el atacante.
 
+### 9.7. CombatSystem (Pipeline de Daño Completo)
+Funciones estáticas que procesan el daño a través de todas las fases del pipeline, incluyendo Shield absorption y death check.
 
-```csharp
-using System.Collections.Generic;
-using UnityEngine;
+```gdscript
+class_name CombatSystem
+extends Object
 
-// La instancia "viva" del objeto que el jugador equipará
-public class ItemInstance 
-{
-    public ItemData BaseData { get; private set; }
-    
-    // Estadísticas finales calculadas (Base + RNG)
-    public float BonusSTR;
-    public float BonusINT;
-    public float BonusMAXHP;
-    
-    // Lista de pasivas que rodaron en este ítem específico
-    public List<PassiveAbility> RolledPassives;
+static func deal_damage(context: CombatContext) -> void:
+	var source = context.source
+	var target = context.target
+	if not target: return
 
-    public ItemInstance(ItemData data) 
-    {
-        BaseData = data;
-        RolledPassives = new List<PassiveAbility>();
-    }
-}
+	# STAGE 1: PRE CALC (e.g. "Next attack +50% power")
+	if source: source.effects.dispatch(EffectResource.Trigger.ON_PRE_DAMAGE_CALC, context)
+	# STAGE 2: OFFENSIVE (Crit buffs, Attack buffs, Elemental)
+	if source: source.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_CALCULATED, context)
+	# STAGE 3: DEFENSIVE (Shields, Armor, Resistances)
+	target.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_RECEIVED_CALC, context)
+	# STAGE 4: FINAL (Clamps, caps, special interactions)
+	if source: source.effects.dispatch(EffectResource.Trigger.ON_PRE_DAMAGE_APPLY, context)
+	target.effects.dispatch(EffectResource.Trigger.ON_PRE_DAMAGE_APPLY, context)
 
-// El sistema encargado de crear el botín
-public class ItemFactory 
-{
-    // Método principal llamado al abrir un cofre o matar un enemigo
-    public ItemInstance GenerateLoot(ItemData template, int currentFloor) 
-    {
-        // 1. Crear el contenedor vacío basado en la plantilla
-        ItemInstance newItem = new ItemInstance(template);
+	# === APPLY DAMAGE (Shield Absorption + Spillover) ===
+	var remaining = context.damage
+	if context.is_penetrating:
+		target.stats.modify_current(StatTypes.HP, -remaining)
+	else:
+		var shield = target.stats.get_current(StatTypes.SHIELD)
+		if shield > 0:
+			if remaining <= shield:
+				target.stats.modify_current(StatTypes.SHIELD, -remaining)
+				remaining = 0
+			else:
+				remaining -= shield
+				target.stats.modify_current(StatTypes.SHIELD, -shield)
+		if remaining > 0:
+			target.stats.modify_current(StatTypes.HP, -remaining)
 
-        // 2. Asignar valores base de la plantilla (Ej. +10 INT fijos)
-        newItem.BonusSTR = template.BaseSTR;
-        newItem.BonusINT = template.BaseINT;
-        newItem.BonusMAXHP = template.BaseMAXHP;
+	# POST DAMAGE
+	if source: source.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_DEALT, context)
+	target.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_TAKEN, context)
+	GlobalEventBus.dispatch("damage_dealt", {
+		"source": source, "target": target,
+		"damage": context.damage, "is_crit": context.is_crit
+	})
 
-        // 3. Sistema RNG: Escalado por el piso actual
-        // A mayor piso, mayor es el pool de "puntos de mejora" a repartir
-        int statBudget = Random.Range(currentFloor, currentFloor * 3);
-        
-        // Repartir el presupuesto aleatoriamente entre los stats permitidos por el ítem
-        for (int i = 0; i < statBudget; i++) 
-        {
-            float roll = Random.value;
-            if (roll < 0.33f) newItem.BonusSTR += 1; // +1 de Fuerza extra
-            else if (roll < 0.66f) newItem.BonusINT += 1; // +1 de Inteligencia extra
-            else newItem.BonusMAXHP += 5; // +5 de Vida extra
-        }
+	# DEATH CHECK
+	if target.stats.get_current(StatTypes.HP) <= 0:
+		context.is_kill = true
+		if source and source != target:
+			source.effects.dispatch(EffectResource.Trigger.ON_KILL, context)
+		target.effects.dispatch(EffectResource.Trigger.ON_DEATH, context)
+		GlobalEventBus.dispatch("entity_died", {"entity": target, "killer": source})
 
-        // 4. Sistema RNG: Generación de Pasivas
-        // Los ítems legendarios siempre traen su pasiva única
-        if (template.Rarity == ItemRarity.Legendary && template.UniquePassive != null) 
-        {
-            newItem.RolledPassives.Add(CreatePassiveInstance(template.UniquePassive));
-        }
-        else 
-        {
-            // Probabilidad de obtener una pasiva común/poco común (Ej. Plating)
-            float passiveChance = 0.10f + (currentFloor * 0.02f); // Más chance en pisos altos
-            if (Random.value <= passiveChance) 
-            {
-                PassiveAbility randomPassive = GetRandomCommonPassive();
-                newItem.RolledPassives.Add(randomPassive);
-                Debug.Log($"¡El ítem generó la pasiva {randomPassive.Name}!");
-            }
-        }
+static func heal(context: CombatContext) -> void:
+	var target = context.target
+	if not target or context.heal_amount <= 0: return
+	target.stats.modify_current(StatTypes.HP, context.heal_amount)
+	target.effects.dispatch(EffectResource.Trigger.ON_HEAL_RECEIVED, context)
+```
 
-        return newItem;
-    }
+### 9.8. SkillExecutor (Resolución de Habilidad con Combat Rolls)
+Orquesta la secuencia completa: Avoid → Hit → Parry → Damage Calc → Crit → Pipeline → Efectos.
 
-    // Método de soporte para instanciar la clase de la pasiva correcta
-    private PassiveAbility CreatePassiveInstance(PassiveData data) 
-    {
-        // En producción, esto usaría Reflexión o un Switch para retornar la clase correcta
-        // Ej: return new Passive_Plating();
-        return null; 
-    }
+```gdscript
+class_name SkillExecutor
+extends Object
 
-    private PassiveAbility GetRandomCommonPassive() 
-    {
-        // Lógica para sacar una pasiva aleatoria del Pool (Ej. Supply Route, Avoid Critical)
-        return null;
-    }
-}
+static func execute(skill: Skill, source: Entity, target: Entity) -> void:
+	var context = CombatContext.new(source, target, skill)
+	context.is_penetrating = skill.ignores_shield
+
+	# 1. ON_SKILL_CAST trigger
+	source.effects.dispatch(EffectResource.Trigger.ON_SKILL_CAST, context)
+
+	# 2. Avoid check
+	var avoid = target.stats.get_stat(StatTypes.AVOID_CHANCE)
+	if avoid > 0 and randi() % 100 < avoid:
+		context.is_avoided = true
+		return # Esquivado completamente
+
+	# 3. Hit check (skill accuracy + source accuracy stat)
+	var total_hit = skill.hit_chance + source.stats.get_stat(StatTypes.ACCURACY)
+	if randi() % 100 >= total_hit:
+		return # Falla de precisión
+
+	# 4. Parry check
+	var parry = target.stats.get_stat(StatTypes.PARRY_CHANCE)
+	if parry > 0 and randi() % 100 < parry:
+		context.is_parry = true
+		GlobalEventBus.dispatch("parry_success", {"entity": target})
+		return # Desviado
+
+	# 5. Base damage calculation
+	context.damage = FormulaCalculator.calculate_damage(skill, source)
+
+	# 6. Crit roll
+	var crit = source.stats.get_stat(StatTypes.CRIT_CHANCE)
+	if crit > 0 and randi() % 100 < crit:
+		context.is_crit = true
+		context.damage = int(context.damage * source.stats.get_stat(StatTypes.CRIT_DAMAGE) / 100.0)
+
+	# 7. Full damage pipeline
+	CombatSystem.deal_damage(context)
+
+	# 8. Apply on-hit effects
+	for effect in skill.on_cast_effects:
+		source.effects.apply_effect(effect)
+	for effect in skill.on_hit_effects:
+		target.effects.apply_effect(effect)
+```
