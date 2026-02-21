@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/bite.tres" id="2_skill1"]
+[ext_resource type="Resource" path="res://data/skills/enrage.tres" id="3_skill2"]
+
+[resource]
+script = ExtResource("1_script")
+enemy_name = "Dragon"
+tier = 2
+base_stats = {
+&"hp": 200,
+&"max_hp": 200,
+&"strength": 25,
+&"defense": 12,
+&"speed": 5,
+&"crit_chance": 8,
+&"crit_damage": 180
+}
+skills = Array[Resource]([ExtResource("2_skill1"), ExtResource("3_skill2")])
+stat_scaling = 0.20

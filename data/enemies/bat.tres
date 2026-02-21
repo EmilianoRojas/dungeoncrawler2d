@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/bite.tres" id="2_skill1"]
+
+[resource]
+script = ExtResource("1_script")
+enemy_name = "Bat"
+tier = 0
+base_stats = {
+&"hp": 20,
+&"max_hp": 20,
+&"strength": 4,
+&"speed": 8,
+&"avoid_chance": 15
+}
+skills = Array[Resource]([ExtResource("2_skill1")])
+stat_scaling = 0.10

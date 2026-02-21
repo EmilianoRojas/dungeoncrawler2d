@@ -137,9 +137,16 @@ func _process_room_event(node: MapNode) -> void:
 func _start_combat(node: MapNode) -> void:
 	current_state = State.COMBAT
 	
-	# TODO: Use node.type to pick enemy template (Elite/Boss = harder enemies)
-	var enemy = EnemyFactory.create_goblin()
-	_log("Floor %d - %s fight!" % [dungeon_manager.current_floor, node.get_type_name()])
+	# Map room type to enemy tier
+	var tier = EnemyTemplate.Tier.NORMAL
+	match node.type:
+		MapNode.Type.ELITE:
+			tier = EnemyTemplate.Tier.ELITE
+		MapNode.Type.BOSS:
+			tier = EnemyTemplate.Tier.BOSS
+	
+	var enemy = EnemyFactory.create_random_enemy(tier, dungeon_manager.current_floor)
+	_log("Floor %d - %s fight! [%s]" % [dungeon_manager.current_floor, node.get_type_name(), enemy.name])
 	
 	turn_manager.start_battle(player_entity, [enemy])
 	game_ui.initialize_battle(player_entity, [enemy])

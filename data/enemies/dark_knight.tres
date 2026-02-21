@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/heavy_strike.tres" id="2_skill1"]
+[ext_resource type="Resource" path="res://data/skills/defensive_stance.tres" id="3_skill2"]
+
+[resource]
+script = ExtResource("1_script")
+enemy_name = "Dark Knight"
+tier = 1
+base_stats = {
+&"hp": 80,
+&"max_hp": 80,
+&"strength": 12,
+&"defense": 10,
+&"speed": 4
+}
+skills = Array[Resource]([ExtResource("2_skill1"), ExtResource("3_skill2")])
+stat_scaling = 0.15
