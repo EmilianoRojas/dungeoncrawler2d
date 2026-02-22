@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="DungeonData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://core/data/dungeon_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/enemies/goblin.tres" id="2_goblin"]
+[ext_resource type="Resource" path="res://data/enemies/slime.tres" id="3_slime"]
+[ext_resource type="Resource" path="res://data/enemies/bat.tres" id="4_bat"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"goblin_caves"
+display_name = "Goblin Caves"
+description = "A damp network of tunnels infested with goblins and vermin. A good place for new adventurers."
+difficulty = 1
+total_floors = 3
+rooms_per_floor = 10
+enemy_pool = Array[Resource]([ExtResource("2_goblin"), ExtResource("3_slime"), ExtResource("4_bat")])
+boss_pool = Array[Resource]([])
+stat_scaling_mult = 0.8
+unlock_requires = &""

@@ -50,6 +50,45 @@ static func create_random_enemy(tier: EnemyTemplate.Tier, dungeon_floor: int) ->
 	var template = templates[randi() % templates.size()]
 	return create_enemy(template, dungeon_floor)
 
+## Create an enemy from a dungeon-specific pool, filtered by tier and scaled by floor.
+## Falls back to create_random_enemy() if pool is empty or has no matching tier.
+static func create_from_pool(pool: Array[EnemyTemplate], boss_pool: Array[EnemyTemplate], tier: EnemyTemplate.Tier, dungeon_floor: int, scaling_mult: float = 1.0) -> Entity:
+	# For bosses, use boss_pool first
+	if tier == EnemyTemplate.Tier.BOSS and boss_pool.size() > 0:
+		var template = boss_pool[randi() % boss_pool.size()]
+		var enemy = create_enemy(template, dungeon_floor)
+		_apply_scaling_mult(enemy, scaling_mult)
+		return enemy
+	
+	# Filter pool by tier
+	var matching: Array[EnemyTemplate] = []
+	for t in pool:
+		if t.tier == tier:
+			matching.append(t)
+	
+	# If no exact tier match, use any from pool (for ELITE rooms in a normal-only pool)
+	if matching.is_empty():
+		matching = pool
+	
+	if matching.is_empty():
+		# Fallback to global templates
+		return create_random_enemy(tier, dungeon_floor)
+	
+	var template = matching[randi() % matching.size()]
+	var enemy = create_enemy(template, dungeon_floor)
+	_apply_scaling_mult(enemy, scaling_mult)
+	return enemy
+
+## Apply dungeon-specific stat scaling multiplier on top of base scaling.
+static func _apply_scaling_mult(enemy: Entity, mult: float) -> void:
+	if mult == 1.0:
+		return
+	for stat_key in [StatTypes.MAX_HP, StatTypes.HP, StatTypes.STRENGTH, StatTypes.DEFENSE, StatTypes.INTELLIGENCE]:
+		var current = enemy.stats.get_stat(stat_key)
+		if current > 0:
+			enemy.stats.set_base_stat(stat_key, int(current * mult))
+	enemy.stats.finalize_initialization()
+
 ## Get all templates matching a tier.
 static func _get_templates_by_tier(tier: EnemyTemplate.Tier) -> Array[EnemyTemplate]:
 	_ensure_templates_loaded()

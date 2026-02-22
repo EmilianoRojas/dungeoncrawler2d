@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="DungeonData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://core/data/dungeon_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/enemies/skeleton.tres" id="2_skeleton"]
+[ext_resource type="Resource" path="res://data/enemies/bat.tres" id="3_bat"]
+[ext_resource type="Resource" path="res://data/enemies/wraith.tres" id="4_wraith"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"haunted_mines"
+display_name = "Haunted Mines"
+description = "Abandoned mines teeming with restless undead. Beware the wraiths that lurk in the darkness."
+difficulty = 2
+total_floors = 4
+rooms_per_floor = 12
+enemy_pool = Array[Resource]([ExtResource("2_skeleton"), ExtResource("3_bat")])
+boss_pool = Array[Resource]([ExtResource("4_wraith")])
+stat_scaling_mult = 1.0
+unlock_requires = &""

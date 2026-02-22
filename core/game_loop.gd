@@ -72,6 +72,12 @@ func _ready() -> void:
 	dungeon_manager = DungeonManager.new()
 	add_child(dungeon_manager)
 	
+	# Load selected dungeon (set by Lobby)
+	if Engine.has_meta("selected_dungeon"):
+		var dungeon_data = Engine.get_meta("selected_dungeon") as DungeonData
+		if dungeon_data:
+			dungeon_manager.configure(dungeon_data)
+	
 	turn_manager = TurnManager.new()
 	add_child(turn_manager)
 	
@@ -93,10 +99,13 @@ func _ready() -> void:
 	GlobalEventBus.subscribe("parry_success", passive_resolver.on_parry_success)
 	GlobalEventBus.subscribe("avoid_success", passive_resolver.on_avoid_success)
 	
-	# 5. Generate Dungeon
+	# 6. Generate Dungeon
 	dungeon_manager.generate_dungeon()
 	
-	_log("Dungeon Generated. Starting at Depth %d" % dungeon_manager.current_depth)
+	var dungeon_name = "Dungeon"
+	if dungeon_manager.dungeon_data:
+		dungeon_name = dungeon_manager.dungeon_data.display_name
+	_log("%s — Starting at Depth %d" % [dungeon_name, dungeon_manager.current_depth])
 	_show_room_selection()
 
 func handle_input(_command: String) -> void:
@@ -181,7 +190,13 @@ func _start_combat(node: MapNode) -> void:
 		MapNode.Type.BOSS:
 			tier = EnemyTemplate.Tier.BOSS
 	
-	var enemy = EnemyFactory.create_random_enemy(tier, dungeon_manager.current_floor)
+	# Create enemy from dungeon pool or fallback to global
+	var enemy: Entity
+	var dd = dungeon_manager.dungeon_data
+	if dd and (dd.enemy_pool.size() > 0 or dd.boss_pool.size() > 0):
+		enemy = EnemyFactory.create_from_pool(dd.enemy_pool, dd.boss_pool, tier, dungeon_manager.current_floor, dd.stat_scaling_mult)
+	else:
+		enemy = EnemyFactory.create_random_enemy(tier, dungeon_manager.current_floor)
 	_log("Floor %d - %s fight! [%s]" % [dungeon_manager.current_floor, node.get_type_name(), enemy.name])
 	
 	# Register passives for combat

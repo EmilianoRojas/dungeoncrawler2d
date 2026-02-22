@@ -10,12 +10,24 @@ var max_depth: int = 15 # Rooms per floor
 var choices_per_floor: int = 2 # How many paths to choose from
 var current_floor: int = 1 # Which floor of the dungeon (for scaling)
 var boss_depth: int = 15 # Default boss spawn depth
+var total_floors: int = 3 # Total floors in this dungeon
+
+# Dungeon data (set via configure())
+var dungeon_data: DungeonData = null
 
 # State
 var current_depth: int = 0
 var current_room: MapNode
 var next_room_choices: Array[MapNode] = []
 var floor_modifiers: Array[MapNode.Modifier] = []
+
+## Configure the dungeon manager from a DungeonData resource.
+func configure(data: DungeonData) -> void:
+	dungeon_data = data
+	max_depth = data.rooms_per_floor
+	total_floors = data.total_floors
+	current_floor = 1
+	print("DungeonManager: Configured for '%s' (%d floors, %d rooms/floor)" % [data.display_name, data.total_floors, data.rooms_per_floor])
 
 func generate_dungeon() -> void:
 	current_depth = 0

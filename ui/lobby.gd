@@ -11,6 +11,10 @@ var _selected_class: ClassData = null
 var _camp_items: Array[CampItemResource] = []
 var _selected_camp_item: CampItemResource = null
 
+# Dungeons
+var _dungeons: Array[DungeonData] = []
+var _selected_dungeon: DungeonData = null
+
 # UI nodes (built dynamically)
 var title_label: Label
 var class_list: VBoxContainer
@@ -27,12 +31,20 @@ var camp_list: VBoxContainer
 var camp_desc: Label
 var camp_selected_label: Label
 
+# Dungeon UI
+var dungeon_list: VBoxContainer
+var dungeon_desc: Label
+var dungeon_selected_label: Label
+var dungeon_difficulty_label: Label
+
 func _ready() -> void:
 	_build_ui()
 	_load_classes()
 	_load_camp_items()
+	_load_dungeons()
 	_populate_class_list()
 	_populate_camp_list()
+	_populate_dungeon_list()
 
 func _build_ui() -> void:
 	# Full-screen dark background
@@ -161,6 +173,44 @@ func _build_ui() -> void:
 	camp_desc.add_theme_font_size_override("font_size", 12)
 	camp_detail.add_child(camp_desc)
 	
+	# --- Dungeon Selection Section ---
+	var dg_header = Label.new()
+	dg_header.text = "Dungeon"
+	dg_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dg_header.add_theme_font_size_override("font_size", 18)
+	dg_header.add_theme_color_override("font_color", Color(0.5, 0.8, 1.0))
+	main_vbox.add_child(dg_header)
+	
+	var dg_row = HBoxContainer.new()
+	dg_row.add_theme_constant_override("separation", 10)
+	dg_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main_vbox.add_child(dg_row)
+	
+	dungeon_list = VBoxContainer.new()
+	dungeon_list.add_theme_constant_override("separation", 4)
+	dg_row.add_child(dungeon_list)
+	
+	var dg_detail = VBoxContainer.new()
+	dg_detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dg_row.add_child(dg_detail)
+	
+	dungeon_selected_label = Label.new()
+	dungeon_selected_label.text = "Select a dungeon"
+	dungeon_selected_label.add_theme_font_size_override("font_size", 14)
+	dg_detail.add_child(dungeon_selected_label)
+	
+	dungeon_difficulty_label = Label.new()
+	dungeon_difficulty_label.text = ""
+	dungeon_difficulty_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	dg_detail.add_child(dungeon_difficulty_label)
+	
+	dungeon_desc = Label.new()
+	dungeon_desc.text = ""
+	dungeon_desc.autowrap_mode = TextServer.AUTOWRAP_WORD
+	dungeon_desc.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	dungeon_desc.add_theme_font_size_override("font_size", 12)
+	dg_detail.add_child(dungeon_desc)
+	
 	# Start button
 	start_button = Button.new()
 	start_button.text = "▶ Start Run"
@@ -258,20 +308,66 @@ func _on_camp_item_selected(index: int) -> void:
 	_update_start_button()
 
 func _update_start_button() -> void:
-	start_button.disabled = not (_selected_class and _selected_camp_item)
+	start_button.disabled = not (_selected_class and _selected_camp_item and _selected_dungeon)
 
 func _on_start_pressed() -> void:
-	if not _selected_class or not _selected_camp_item:
+	if not _selected_class or not _selected_camp_item or not _selected_dungeon:
 		return
 	
 	# Store selections globally so GameLoop can read them
 	_store_class_selection(_selected_class)
 	Engine.set_meta("selected_camp_item", _selected_camp_item)
+	Engine.set_meta("selected_dungeon", _selected_dungeon)
 	
 	# Transition to main game scene
 	get_tree().change_scene_to_file("res://main.tscn")
 
 func _store_class_selection(cls: ClassData) -> void:
-	# Use a meta on the root autoload or a simple global
-	# We'll store it on the Engine singleton metadata
 	Engine.set_meta("selected_class", cls)
+
+# --- Dungeon Loading ---
+
+func _load_dungeons() -> void:
+	var dir = DirAccess.open("res://data/dungeons/")
+	if not dir:
+		push_warning("Lobby: Cannot open res://data/dungeons/")
+		return
+	
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	while file_name != "":
+		if file_name.ends_with(".tres"):
+			var path = "res://data/dungeons/" + file_name
+			var res = load(path)
+			if res is DungeonData:
+				_dungeons.append(res)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	
+	_dungeons.sort_custom(func(a, b): return a.difficulty < b.difficulty)
+
+func _populate_dungeon_list() -> void:
+	for i in range(_dungeons.size()):
+		var dg = _dungeons[i]
+		var btn = Button.new()
+		var locked = not DungeonProgress.is_unlocked(dg)
+		
+		var stars = "⭐".repeat(dg.difficulty)
+		if locked:
+			btn.text = "🔒 %s %s" % [dg.display_name, stars]
+			btn.disabled = true
+		else:
+			btn.text = "%s %s" % [dg.display_name, stars]
+			btn.disabled = false
+		
+		btn.custom_minimum_size = Vector2(200, 36)
+		var idx = i
+		btn.pressed.connect(func(): _on_dungeon_selected(idx))
+		dungeon_list.add_child(btn)
+
+func _on_dungeon_selected(index: int) -> void:
+	_selected_dungeon = _dungeons[index]
+	dungeon_selected_label.text = _selected_dungeon.display_name
+	dungeon_difficulty_label.text = "⭐".repeat(_selected_dungeon.difficulty) + " (%d floors)" % _selected_dungeon.total_floors
+	dungeon_desc.text = _selected_dungeon.description
+	_update_start_button()

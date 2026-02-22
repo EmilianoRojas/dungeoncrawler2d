@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="DungeonData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://core/data/dungeon_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/enemies/dark_knight.tres" id="2_dark_knight"]
+[ext_resource type="Resource" path="res://data/enemies/wraith.tres" id="3_wraith"]
+[ext_resource type="Resource" path="res://data/enemies/dragon.tres" id="4_dragon"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"dragon_lair"
+display_name = "Dragon's Lair"
+description = "The volcanic den of an ancient dragon. A gauntlet of the strongest foes awaits."
+difficulty = 4
+total_floors = 3
+rooms_per_floor = 12
+enemy_pool = Array[Resource]([ExtResource("2_dark_knight"), ExtResource("3_wraith")])
+boss_pool = Array[Resource]([ExtResource("4_dragon")])
+stat_scaling_mult = 1.6
+unlock_requires = &"dark_fortress"
