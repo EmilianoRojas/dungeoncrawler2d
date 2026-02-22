@@ -6,6 +6,7 @@ signal skill_activated(skill: Skill)
 signal room_selected(index: int)
 signal skill_draft_choice(action: String, slot_index: int)
 signal camp_action_chosen(action: String)
+signal loot_decision(equip: bool)
 
 # Top Bar
 @onready var floor_label: Label = $TopBar/HBoxContainer/FloorLabel
@@ -35,7 +36,11 @@ const SKILL_BTN_SCENE = preload("res://ui/components/skill_button.tscn")
 const SKILL_DRAFT_SCENE = preload("res://ui/components/skill_draft_panel.tscn")
 
 var active_draft: SkillDraftPanel = null
-var _camp_menu: VBoxContainer = null
+var _camp_menu_wrapper: CenterContainer = null
+var _loot_panel: LootPanel = null
+var _char_panel: CharacterPanel = null
+var _stats_button: Button = null
+var _player_ref: Entity = null
 
 func _ready() -> void:
 	# Initialize Room Selector
@@ -49,6 +54,13 @@ func _ready() -> void:
 	enemy_shield.set_as_shield()
 	
 	add_log("Welcome to Dungeon Crawler 2D!")
+	
+	# Add persistent Stats button to top bar
+	_stats_button = Button.new()
+	_stats_button.text = "📊 Stats"
+	_stats_button.custom_minimum_size = Vector2(80, 0)
+	_stats_button.pressed.connect(_toggle_character_panel)
+	$TopBar/HBoxContainer.add_child(_stats_button)
 
 func _on_room_selected(index: int) -> void:
 	room_selected.emit(index)
@@ -133,6 +145,15 @@ func _populate_skills(player: Entity) -> void:
 func _on_skill_pressed(skill: Skill) -> void:
 	skill_activated.emit(skill)
 
+func update_skill_cooldowns(player: Entity) -> void:
+	for child in skill_container.get_children():
+		if child is SkillButton:
+			var btn = child as SkillButton
+			var skill = btn.skill_reference
+			if skill and player.skills:
+				var cd = player.skills.cooldowns.get(skill, 0)
+				btn.update_cooldown(cd)
+
 # --- Log ---
 
 func add_log(text: String) -> void:
@@ -165,23 +186,26 @@ func _on_draft_completed(action: String, slot_index: int) -> void:
 
 func show_camp_menu(camp_item: CampItemResource, cooldown: int, can_use: bool) -> void:
 	# Remove previous camp menu if exists
-	if _camp_menu:
-		_camp_menu.queue_free()
-		_camp_menu = null
+	if _camp_menu_wrapper:
+		_camp_menu_wrapper.queue_free()
+		_camp_menu_wrapper = null
 	
-	_camp_menu = VBoxContainer.new()
-	_camp_menu.set_anchors_preset(Control.PRESET_CENTER)
-	_camp_menu.position = Vector2(get_viewport_rect().size.x / 2 - 150, get_viewport_rect().size.y / 2 - 80)
-	_camp_menu.custom_minimum_size = Vector2(300, 0)
-	_camp_menu.add_theme_constant_override("separation", 12)
-	add_child(_camp_menu)
+	# Full-screen CenterContainer for proper centering
+	_camp_menu_wrapper = CenterContainer.new()
+	_camp_menu_wrapper.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_camp_menu_wrapper)
+	
+	var menu = VBoxContainer.new()
+	menu.custom_minimum_size = Vector2(300, 0)
+	menu.add_theme_constant_override("separation", 12)
+	_camp_menu_wrapper.add_child(menu)
 	
 	# Title
 	var title = Label.new()
 	title.text = "⛺ Camp"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 24)
-	_camp_menu.add_child(title)
+	menu.add_child(title)
 	
 	# Rest button (always available)
 	var rest_btn = Button.new()
@@ -191,7 +215,7 @@ func show_camp_menu(camp_item: CampItemResource, cooldown: int, can_use: bool) -
 		_close_camp_menu()
 		camp_action_chosen.emit("rest")
 	)
-	_camp_menu.add_child(rest_btn)
+	menu.add_child(rest_btn)
 	
 	# Camp item button
 	if camp_item:
@@ -210,7 +234,7 @@ func show_camp_menu(camp_item: CampItemResource, cooldown: int, can_use: bool) -
 			_close_camp_menu()
 			camp_action_chosen.emit("use_item")
 		)
-		_camp_menu.add_child(item_btn)
+		menu.add_child(item_btn)
 		
 		# Description label
 		var desc = Label.new()
@@ -218,14 +242,61 @@ func show_camp_menu(camp_item: CampItemResource, cooldown: int, can_use: bool) -
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD
 		desc.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 		desc.add_theme_font_size_override("font_size", 12)
-		_camp_menu.add_child(desc)
+		menu.add_child(desc)
 	else:
 		var no_item = Label.new()
 		no_item.text = "No camp item equipped."
 		no_item.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
-		_camp_menu.add_child(no_item)
+		menu.add_child(no_item)
 
 func _close_camp_menu() -> void:
-	if _camp_menu:
-		_camp_menu.queue_free()
-		_camp_menu = null
+	if _camp_menu_wrapper:
+		_camp_menu_wrapper.queue_free()
+		_camp_menu_wrapper = null
+
+# --- Loot Panel ---
+
+func show_loot_panel(item: EquipmentResource, current_equipped: EquipmentResource = null) -> void:
+	_close_loot_panel()
+	
+	_loot_panel = LootPanel.new()
+	_loot_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_loot_panel.setup(item, current_equipped)
+	_loot_panel.loot_choice.connect(_on_loot_choice)
+	add_child(_loot_panel)
+
+func _on_loot_choice(equip: bool) -> void:
+	_close_loot_panel()
+	loot_decision.emit(equip)
+
+func _close_loot_panel() -> void:
+	if _loot_panel:
+		_loot_panel.queue_free()
+		_loot_panel = null
+
+# --- Character Panel ---
+
+func set_player_ref(player: Entity) -> void:
+	_player_ref = player
+
+func _toggle_character_panel() -> void:
+	if _char_panel:
+		_close_character_panel()
+	else:
+		_show_character_panel()
+
+func _show_character_panel() -> void:
+	if not _player_ref:
+		return
+	_close_character_panel()
+	
+	_char_panel = CharacterPanel.new()
+	_char_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_char_panel.setup(_player_ref)
+	_char_panel.panel_closed.connect(_close_character_panel)
+	add_child(_char_panel)
+
+func _close_character_panel() -> void:
+	if _char_panel:
+		_char_panel.queue_free()
+		_char_panel = null

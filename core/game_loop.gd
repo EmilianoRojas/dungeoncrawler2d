@@ -21,6 +21,10 @@ const UI_SCENE = preload("res://ui/game_ui.tscn")
 # Skill Draft state
 var _pending_skill_offer: Skill = null
 
+# Loot queue state
+var _pending_loot: Array[EquipmentResource] = []
+var _pending_loot_source: String = "" # "combat" or "chest"
+
 # Passive system
 var passive_resolver: PassiveResolver
 
@@ -40,6 +44,7 @@ func _ready() -> void:
 	game_ui.skill_activated.connect(_on_ui_skill_activated)
 	game_ui.room_selected.connect(_on_room_selected)
 	game_ui.camp_action_chosen.connect(_on_camp_action)
+	game_ui.loot_decision.connect(_on_loot_decision)
 	
 	# 2. Initialize Player
 	player_entity = Entity.new()
@@ -68,6 +73,8 @@ func _ready() -> void:
 			player_entity.camp_item = camp_item
 			print("Loaded Camp Item: %s" % camp_item.display_name)
 	
+	# Give UI a reference to the player for the Stats panel
+	game_ui.set_player_ref(player_entity)
 	# 3. Initialize Systems
 	dungeon_manager = DungeonManager.new()
 	add_child(dungeon_manager)
@@ -116,13 +123,20 @@ func handle_input(_command: String) -> void:
 func _on_ui_skill_activated(skill: Skill) -> void:
 	if current_state != State.COMBAT: return
 	
+	# Check cooldown
+	if not player_entity.skills.is_skill_ready(skill):
+		_log("⏳ %s is on cooldown (%d turns left)" % [skill.skill_name, player_entity.skills.cooldowns.get(skill, 0)])
+		return
+	
 	# For prototype, assume single target (the first enemy)
 	var target = turn_manager.get_first_alive_enemy()
 	
 	if target:
 		var action = AttackAction.new(player_entity, target)
-		# action.damage = 10 # REMOVED
 		action.skill_reference = skill
+		# Put skill on cooldown before submitting (so UI updates immediately)
+		player_entity.skills.put_on_cooldown(skill)
+		game_ui.update_skill_cooldowns(player_entity)
 		turn_manager.submit_player_action(action)
 
 func _show_room_selection() -> void:
@@ -169,8 +183,6 @@ func _process_room_event(node: MapNode) -> void:
 		MapNode.Type.CHEST:
 			_log("Found a Chest!")
 			_process_chest_loot()
-			dungeon_manager.complete_current_room()
-			call_deferred("_on_room_completed")
 		MapNode.Type.EVENT:
 			_log("Event Triggered! (Not implemented)")
 			dungeon_manager.complete_current_room()
@@ -228,37 +240,8 @@ func _on_battle_ended(result: TurnManager.Phase) -> void:
 		_log("Victory! Proceeding.")
 		# Reset shield after battle (GameSpec §3)
 		player_entity.stats.reset_shield()
-		# Generate loot from the enemy
+		# Generate loot from the enemy and show loot UI
 		_process_combat_loot()
-		
-		# Award XP based on enemy tier
-		var current_room = dungeon_manager.current_room
-		var tier = 0 # NORMAL
-		if current_room:
-			if current_room.type == MapNode.Type.ELITE:
-				tier = 1
-			elif current_room.type == MapNode.Type.BOSS:
-				tier = 2
-		
-		var xp_amount = LevelUpSystem.get_xp_for_tier(tier)
-		_log("+%d XP" % xp_amount)
-		var leveled_up = LevelUpSystem.award_xp(player_entity, xp_amount)
-		
-		# Update XP display
-		game_ui.update_level_info(
-			player_entity.level,
-			player_entity.xp,
-			LevelUpSystem.xp_for_level(player_entity.level)
-		)
-		
-		if leveled_up:
-			_log("⬆ LEVEL UP! Now Level %d" % player_entity.level)
-			_start_skill_draft()
-			return # Wait for draft to complete before proceeding
-		
-		dungeon_manager.complete_current_room()
-		await get_tree().create_timer(1.0).timeout
-		_on_room_completed()
 	else:
 		_log("DEFEATED.")
 		# Handle Game Over (Run ends, reset everything)
@@ -291,35 +274,100 @@ func _process_combat_loot() -> void:
 	
 	if rewards.is_empty():
 		_log("No loot dropped.")
+		_finish_loot_phase()
 		return
 	
+	# Separate equipment (needs UI) from auto-apply rewards
+	_pending_loot.clear()
+	_pending_loot_source = "combat"
 	for reward in rewards:
 		if reward.type == RewardResource.Type.EQUIPMENT and reward.equipment:
-			var equipped = RewardApplier.try_auto_equip(player_entity, reward.equipment)
-			if equipped:
-				_log("Equipped: %s [%s]" % [reward.equipment.display_name, reward.equipment.rarity])
-				game_ui.update_hp(player_entity, true) # Refresh stats display
-			else:
-				_log("Found: %s [%s] (current gear is better)" % [reward.equipment.display_name, reward.equipment.rarity])
+			_pending_loot.append(reward.equipment)
 		else:
 			RewardApplier.apply_reward(player_entity, reward)
 			_log("Gained: %s" % reward.get_display_name())
+	
+	_process_loot_queue()
 
 func _process_chest_loot() -> void:
 	var dungeon_floor = dungeon_manager.current_floor
 	var rewards = LootSystem.generate_chest_loot(dungeon_floor)
 	
+	_pending_loot.clear()
+	_pending_loot_source = "chest"
 	for reward in rewards:
 		if reward.type == RewardResource.Type.EQUIPMENT and reward.equipment:
-			var equipped = RewardApplier.try_auto_equip(player_entity, reward.equipment)
-			if equipped:
-				_log("Equipped: %s [%s]" % [reward.equipment.display_name, reward.equipment.rarity])
-				game_ui.update_hp(player_entity, true)
-			else:
-				_log("Found: %s [%s] (current gear is better)" % [reward.equipment.display_name, reward.equipment.rarity])
+			_pending_loot.append(reward.equipment)
 		else:
 			RewardApplier.apply_reward(player_entity, reward)
 			_log("Gained: %s" % reward.get_display_name())
+	
+	_process_loot_queue()
+
+func _process_loot_queue() -> void:
+	if _pending_loot.is_empty():
+		_finish_loot_phase()
+		return
+	
+	# Show the next item
+	var item = _pending_loot[0]
+	var slot = item.slot
+	var current_equipped: EquipmentResource = null
+	if player_entity.equipment and player_entity.equipment.equipped_items.has(slot):
+		current_equipped = player_entity.equipment.equipped_items[slot] as EquipmentResource
+	
+	_log("Found: %s [%s]" % [item.display_name, item.rarity])
+	game_ui.show_loot_panel(item, current_equipped)
+
+func _on_loot_decision(equip: bool) -> void:
+	if _pending_loot.is_empty():
+		return
+	
+	var item = _pending_loot.pop_front()
+	if equip:
+		if player_entity.equipment:
+			player_entity.equipment.equip(item)
+		_log("Equipped: %s [%s]" % [item.display_name, item.rarity])
+		game_ui.update_hp(player_entity, true)
+	else:
+		_log("Skipped: %s" % item.display_name)
+	
+	# Show next item or finish
+	_process_loot_queue()
+
+func _finish_loot_phase() -> void:
+	if _pending_loot_source == "combat":
+		# Award XP after combat loot
+		var current_room = dungeon_manager.current_room
+		var tier = 0
+		if current_room:
+			if current_room.type == MapNode.Type.ELITE:
+				tier = 1
+			elif current_room.type == MapNode.Type.BOSS:
+				tier = 2
+		
+		var xp_amount = LevelUpSystem.get_xp_for_tier(tier)
+		_log("+%d XP" % xp_amount)
+		var leveled_up = LevelUpSystem.award_xp(player_entity, xp_amount)
+		
+		game_ui.update_level_info(
+			player_entity.level,
+			player_entity.xp,
+			LevelUpSystem.xp_for_level(player_entity.level)
+		)
+		
+		if leveled_up:
+			_log("⬆ LEVEL UP! Now Level %d" % player_entity.level)
+			_start_skill_draft()
+			return
+		
+		dungeon_manager.complete_current_room()
+		await get_tree().create_timer(1.0).timeout
+		_on_room_completed()
+	else:
+		# Chest loot — just proceed
+		dungeon_manager.complete_current_room()
+		call_deferred("_on_room_completed")
 
 func _log(msg: String) -> void:
 	# game_ui.add_log already prints to console, so we don't need print(msg) here
