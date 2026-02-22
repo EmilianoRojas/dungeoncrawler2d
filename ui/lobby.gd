@@ -7,6 +7,10 @@ extends Control
 var _classes: Array[ClassData] = []
 var _selected_class: ClassData = null
 
+# Camp Items
+var _camp_items: Array[CampItemResource] = []
+var _selected_camp_item: CampItemResource = null
+
 # UI nodes (built dynamically)
 var title_label: Label
 var class_list: VBoxContainer
@@ -17,10 +21,18 @@ var detail_stats: RichTextLabel
 var detail_skills: Label
 var start_button: Button
 
+# Camp item UI
+var camp_section_label: Label
+var camp_list: VBoxContainer
+var camp_desc: Label
+var camp_selected_label: Label
+
 func _ready() -> void:
 	_build_ui()
 	_load_classes()
+	_load_camp_items()
 	_populate_class_list()
+	_populate_camp_list()
 
 func _build_ui() -> void:
 	# Full-screen dark background
@@ -116,6 +128,39 @@ func _build_ui() -> void:
 	detail_skills.autowrap_mode = TextServer.AUTOWRAP_WORD
 	detail_panel.add_child(detail_skills)
 	
+	# --- Camp Item Section ---
+	var camp_header = Label.new()
+	camp_header.text = "Camp Item"
+	camp_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	camp_header.add_theme_font_size_override("font_size", 18)
+	camp_header.add_theme_color_override("font_color", Color(0.9, 0.75, 0.4))
+	main_vbox.add_child(camp_header)
+	
+	var camp_row = HBoxContainer.new()
+	camp_row.add_theme_constant_override("separation", 10)
+	camp_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main_vbox.add_child(camp_row)
+	
+	camp_list = VBoxContainer.new()
+	camp_list.add_theme_constant_override("separation", 4)
+	camp_row.add_child(camp_list)
+	
+	var camp_detail = VBoxContainer.new()
+	camp_detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	camp_row.add_child(camp_detail)
+	
+	camp_selected_label = Label.new()
+	camp_selected_label.text = "Select a camp item"
+	camp_selected_label.add_theme_font_size_override("font_size", 14)
+	camp_detail.add_child(camp_selected_label)
+	
+	camp_desc = Label.new()
+	camp_desc.text = ""
+	camp_desc.autowrap_mode = TextServer.AUTOWRAP_WORD
+	camp_desc.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	camp_desc.add_theme_font_size_override("font_size", 12)
+	camp_detail.add_child(camp_desc)
+	
 	# Start button
 	start_button = Button.new()
 	start_button.text = "▶ Start Run"
@@ -175,13 +220,53 @@ func _on_class_selected(index: int) -> void:
 		if skill is Skill:
 			skill_names.append(skill.skill_name)
 	detail_skills.text = "Starting Skills: %s" % ", ".join(skill_names) if skill_names.size() > 0 else "Starting Skills: None"
+	_update_start_button()
 
-func _on_start_pressed() -> void:
-	if not _selected_class:
+func _load_camp_items() -> void:
+	var dir = DirAccess.open("res://data/camp_items/")
+	if not dir:
+		push_warning("Lobby: Cannot open res://data/camp_items/")
 		return
 	
-	# Store selection globally so GameLoop can read it
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	while file_name != "":
+		if file_name.ends_with(".tres"):
+			var path = "res://data/camp_items/" + file_name
+			var res = load(path)
+			if res is CampItemResource:
+				_camp_items.append(res)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	
+	_camp_items.sort_custom(func(a, b): return a.display_name < b.display_name)
+
+func _populate_camp_list() -> void:
+	for i in range(_camp_items.size()):
+		var item = _camp_items[i]
+		var btn = Button.new()
+		btn.text = item.display_name
+		btn.custom_minimum_size = Vector2(150, 32)
+		var idx = i
+		btn.pressed.connect(func(): _on_camp_item_selected(idx))
+		camp_list.add_child(btn)
+
+func _on_camp_item_selected(index: int) -> void:
+	_selected_camp_item = _camp_items[index]
+	camp_selected_label.text = _selected_camp_item.display_name
+	camp_desc.text = _selected_camp_item.description
+	_update_start_button()
+
+func _update_start_button() -> void:
+	start_button.disabled = not (_selected_class and _selected_camp_item)
+
+func _on_start_pressed() -> void:
+	if not _selected_class or not _selected_camp_item:
+		return
+	
+	# Store selections globally so GameLoop can read them
 	_store_class_selection(_selected_class)
+	Engine.set_meta("selected_camp_item", _selected_camp_item)
 	
 	# Transition to main game scene
 	get_tree().change_scene_to_file("res://main.tscn")

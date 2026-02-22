@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="CampItemResource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://core/items/camp_item_resource.gd" id="1_camp"]
+[ext_resource type="Script" path="res://core/effects/effect_resource.gd" id="2_effect"]
+[ext_resource type="Script" path="res://core/stats/stat_modifier.gd" id="3_mod"]
+
+[sub_resource type="Resource" id="avoid_mod"]
+script = ExtResource("3_mod")
+stat = &"avoid_chance"
+type = 0
+value = 30.0
+source_id = &"smoke_bomb"
+duration_turns = 3
+
+[sub_resource type="Resource" id="avoid_effect"]
+script = ExtResource("2_effect")
+effect_id = &"camp_smoke_bomb"
+trigger = 12
+operation = 11
+stat_modifier = SubResource("avoid_mod")
+value = 0.0
+stat_type = &""
+proc_chance = 1.0
+conditions = Array[Resource]([])
+stack_rule = 3
+max_stacks = 1
+duration_turns = 3
+
+[resource]
+script = ExtResource("1_camp")
+id = &"smoke_bomb"
+display_name = "Smoke Bomb"
+description = "Grants +30 Avoid Chance for 3 turns in the next combat."
+icon_text = "B"
+max_cooldown = 5
+effects = Array[Resource]([SubResource("avoid_effect")])
+is_consumable = false

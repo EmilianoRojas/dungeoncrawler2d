@@ -39,6 +39,7 @@ func _ready() -> void:
 	game_ui.command_submitted.connect(handle_input)
 	game_ui.skill_activated.connect(_on_ui_skill_activated)
 	game_ui.room_selected.connect(_on_room_selected)
+	game_ui.camp_action_chosen.connect(_on_camp_action)
 	
 	# 2. Initialize Player
 	player_entity = Entity.new()
@@ -59,6 +60,13 @@ func _ready() -> void:
 		print("Loaded Class: %s" % selected_class.title)
 	else:
 		print("Error: Could not load any class!")
+	
+	# Load selected camp item (set by Lobby, optional)
+	if Engine.has_meta("selected_camp_item"):
+		var camp_item = Engine.get_meta("selected_camp_item") as CampItemResource
+		if camp_item:
+			player_entity.camp_item = camp_item
+			print("Loaded Camp Item: %s" % camp_item.display_name)
 	
 	# 3. Initialize Systems
 	dungeon_manager = DungeonManager.new()
@@ -127,6 +135,9 @@ func _show_room_selection() -> void:
 	game_ui.set_mode(false)
 
 func _on_room_selected(choice_index: int) -> void:
+	# Tick camp item cooldown each room traversal
+	player_entity.tick_camp_item_cooldown()
+	
 	var node = dungeon_manager.advance_to_room(choice_index)
 	_log("Depth %d — %s" % [dungeon_manager.current_depth, node.get_type_name()])
 	
@@ -156,12 +167,8 @@ func _process_room_event(node: MapNode) -> void:
 			dungeon_manager.complete_current_room()
 			call_deferred("_on_room_completed")
 		MapNode.Type.CAMP:
-			_log("Camp. Rested and recovered.")
-			# Heal HP and reset Shield (GameSpec §1)
-			player_entity.stats.modify_current(StatTypes.HP, player_entity.stats.get_stat(StatTypes.MAX_HP))
-			player_entity.stats.reset_shield()
-			dungeon_manager.complete_current_room()
-			call_deferred("_on_room_completed")
+			_log("Found a Camp. Choose your action.")
+			_show_camp_menu()
 
 func _start_combat(node: MapNode) -> void:
 	current_state = State.COMBAT
@@ -360,3 +367,32 @@ func _finish_post_combat() -> void:
 	dungeon_manager.complete_current_room()
 	await get_tree().create_timer(1.0).timeout
 	_on_room_completed()
+
+# --- CAMP MENU ---
+
+func _show_camp_menu() -> void:
+	current_state = State.EVENT # Re-use EVENT state for camp interaction
+	game_ui.set_mode(false)
+	game_ui.show_camp_menu(
+		player_entity.camp_item,
+		player_entity.camp_item_cooldown,
+		player_entity.can_use_camp_item()
+	)
+
+func _on_camp_action(action: String) -> void:
+	match action:
+		"rest":
+			# Full HP heal + shield reset
+			player_entity.stats.modify_current(StatTypes.HP, player_entity.stats.get_stat(StatTypes.MAX_HP))
+			player_entity.stats.reset_shield()
+			_log("Rested. HP and Shield fully restored.")
+			game_ui.update_hp(player_entity, true)
+		"use_item":
+			if player_entity.use_camp_item():
+				_log("Used: %s" % player_entity.camp_item.display_name)
+				game_ui.update_hp(player_entity, true)
+			else:
+				_log("Cannot use camp item right now.")
+	
+	dungeon_manager.complete_current_room()
+	call_deferred("_on_room_completed")

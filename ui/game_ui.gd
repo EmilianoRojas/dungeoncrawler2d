@@ -5,6 +5,7 @@ signal command_submitted(cmd: String)
 signal skill_activated(skill: Skill)
 signal room_selected(index: int)
 signal skill_draft_choice(action: String, slot_index: int)
+signal camp_action_chosen(action: String)
 
 # Top Bar
 @onready var floor_label: Label = $TopBar/HBoxContainer/FloorLabel
@@ -34,6 +35,7 @@ const SKILL_BTN_SCENE = preload("res://ui/components/skill_button.tscn")
 const SKILL_DRAFT_SCENE = preload("res://ui/components/skill_draft_panel.tscn")
 
 var active_draft: SkillDraftPanel = null
+var _camp_menu: VBoxContainer = null
 
 func _ready() -> void:
 	# Initialize Room Selector
@@ -158,3 +160,72 @@ func show_skill_draft(offered: Skill, skills: Array[Skill], max_slots: int, upgr
 func _on_draft_completed(action: String, slot_index: int) -> void:
 	active_draft = null
 	skill_draft_choice.emit(action, slot_index)
+
+# --- Camp Menu ---
+
+func show_camp_menu(camp_item: CampItemResource, cooldown: int, can_use: bool) -> void:
+	# Remove previous camp menu if exists
+	if _camp_menu:
+		_camp_menu.queue_free()
+		_camp_menu = null
+	
+	_camp_menu = VBoxContainer.new()
+	_camp_menu.set_anchors_preset(Control.PRESET_CENTER)
+	_camp_menu.position = Vector2(get_viewport_rect().size.x / 2 - 150, get_viewport_rect().size.y / 2 - 80)
+	_camp_menu.custom_minimum_size = Vector2(300, 0)
+	_camp_menu.add_theme_constant_override("separation", 12)
+	add_child(_camp_menu)
+	
+	# Title
+	var title = Label.new()
+	title.text = "⛺ Camp"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 24)
+	_camp_menu.add_child(title)
+	
+	# Rest button (always available)
+	var rest_btn = Button.new()
+	rest_btn.text = "🛌 Rest (Full Heal)"
+	rest_btn.custom_minimum_size = Vector2(0, 45)
+	rest_btn.pressed.connect(func():
+		_close_camp_menu()
+		camp_action_chosen.emit("rest")
+	)
+	_camp_menu.add_child(rest_btn)
+	
+	# Camp item button
+	if camp_item:
+		var item_btn = Button.new()
+		if can_use:
+			item_btn.text = "🎒 Use: %s" % camp_item.display_name
+			item_btn.disabled = false
+		else:
+			if cooldown > 0:
+				item_btn.text = "🎒 %s (CD: %d rooms)" % [camp_item.display_name, cooldown]
+			else:
+				item_btn.text = "🎒 %s (Consumed)" % camp_item.display_name
+			item_btn.disabled = true
+		item_btn.custom_minimum_size = Vector2(0, 45)
+		item_btn.pressed.connect(func():
+			_close_camp_menu()
+			camp_action_chosen.emit("use_item")
+		)
+		_camp_menu.add_child(item_btn)
+		
+		# Description label
+		var desc = Label.new()
+		desc.text = camp_item.description
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD
+		desc.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+		desc.add_theme_font_size_override("font_size", 12)
+		_camp_menu.add_child(desc)
+	else:
+		var no_item = Label.new()
+		no_item.text = "No camp item equipped."
+		no_item.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+		_camp_menu.add_child(no_item)
+
+func _close_camp_menu() -> void:
+	if _camp_menu:
+		_camp_menu.queue_free()
+		_camp_menu = null

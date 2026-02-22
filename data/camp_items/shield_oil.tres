@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="CampItemResource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://core/items/camp_item_resource.gd" id="1_camp"]
+[ext_resource type="Script" path="res://core/effects/effect_resource.gd" id="2_effect"]
+
+[sub_resource type="Resource" id="shield_effect"]
+script = ExtResource("2_effect")
+effect_id = &"camp_shield_oil"
+trigger = 0
+operation = 12
+value = 10.0
+stat_type = &"shield"
+proc_chance = 1.0
+conditions = Array[Resource]([])
+stack_rule = 3
+max_stacks = 1
+duration_turns = -1
+
+[resource]
+script = ExtResource("1_camp")
+id = &"shield_oil"
+display_name = "Shield Oil"
+description = "Restores shield to full and grants +10 bonus shield."
+icon_text = "S"
+max_cooldown = 4
+effects = Array[Resource]([SubResource("shield_effect")])
+is_consumable = false

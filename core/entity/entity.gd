@@ -23,6 +23,52 @@ var xp: int = 0
 var level: int = 1
 var max_skill_slots: int = 4
 
+# Camp Item (GameSpec §1: consumable selected at run start)
+var camp_item: CampItemResource = null
+var camp_item_cooldown: int = 0
+var _camp_item_consumed: bool = false # Tracks if a consumable item was used
+
+## Use the equipped camp item. Returns true if successful.
+func use_camp_item() -> bool:
+	if not camp_item:
+		return false
+	if _camp_item_consumed:
+		return false
+	if camp_item_cooldown > 0:
+		return false
+	
+	# Apply each effect from the camp item
+	for effect_res in camp_item.effects:
+		if effect_res.operation == EffectResource.Operation.HEAL:
+			# Special: heal based on percentage of max HP
+			var max_hp = stats.get_stat(StatTypes.MAX_HP)
+			var heal_amount = int(max_hp * effect_res.value)
+			stats.modify_current(StatTypes.HP, heal_amount)
+		elif effect_res.operation == EffectResource.Operation.ADD_STAT_MODIFIER:
+			effects.apply_effect(effect_res)
+		else:
+			effects.apply_effect(effect_res)
+	
+	# Start cooldown or consume
+	if camp_item.is_consumable:
+		_camp_item_consumed = true
+	else:
+		camp_item_cooldown = camp_item.max_cooldown
+	
+	return true
+
+## Tick camp item cooldown (call once per room traversal)
+func tick_camp_item_cooldown() -> void:
+	if camp_item_cooldown > 0:
+		camp_item_cooldown -= 1
+
+## Check if the camp item is available to use
+func can_use_camp_item() -> bool:
+	if not camp_item: return false
+	if _camp_item_consumed: return false
+	if camp_item_cooldown > 0: return false
+	return true
+
 func _ready() -> void:
 	if not initialized:
 		initialize()

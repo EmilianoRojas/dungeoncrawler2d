@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="CampItemResource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://core/items/camp_item_resource.gd" id="1_camp"]
+[ext_resource type="Script" path="res://core/effects/effect_resource.gd" id="2_effect"]
+[ext_resource type="Script" path="res://core/stats/stat_modifier.gd" id="3_mod"]
+
+[sub_resource type="Resource" id="str_mod"]
+script = ExtResource("3_mod")
+stat = &"strength"
+type = 1
+value = 0.2
+source_id = &"whetstone"
+duration_turns = 5
+
+[sub_resource type="Resource" id="buff_effect"]
+script = ExtResource("2_effect")
+effect_id = &"camp_whetstone"
+trigger = 12
+operation = 11
+stat_modifier = SubResource("str_mod")
+value = 0.0
+stat_type = &""
+proc_chance = 1.0
+conditions = Array[Resource]([])
+stack_rule = 3
+max_stacks = 1
+duration_turns = 5
+
+[resource]
+script = ExtResource("1_camp")
+id = &"whetstone"
+display_name = "Whetstone"
+description = "Grants +20% STR for 5 turns in the next combat."
+icon_text = "W"
+max_cooldown = 4
+effects = Array[Resource]([SubResource("buff_effect")])
+is_consumable = false
