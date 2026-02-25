@@ -1,9 +1,13 @@
-[gd_resource type="Resource" script_class="ClassData" load_steps=5 format=3 uid="uid://dr3brmvrwsek"]
+[gd_resource type="Resource" script_class="ClassData" load_steps=6 format=3 uid="uid://dr3brmvrwsek"]
 
 [ext_resource type="Script" uid="uid://n28pm4g4p03n" path="res://core/data/class_data.gd" id="1_class"]
 [ext_resource type="Texture2D" uid="uid://q2hocdbv5rjc" path="res://data/Knight.png" id="2_kv6er"]
 [ext_resource type="Resource" path="res://data/skills/heavy_strike.tres" id="2_skill1"]
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="3_8y3rw"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kv6er"]
+atlas = ExtResource("2_kv6er")
+region = Rect2(23, 14, 24, 30)
 
 [resource]
 script = ExtResource("1_class")
@@ -18,4 +22,4 @@ base_stats = Dictionary[StringName, int]({
 })
 starting_skills = Array[ExtResource("3_8y3rw")]([ExtResource("2_skill1")])
 starting_passives = Array[StringName]([&"super_strength"])
-sprite = ExtResource("2_kv6er")
+sprite = SubResource("AtlasTexture_kv6er")
