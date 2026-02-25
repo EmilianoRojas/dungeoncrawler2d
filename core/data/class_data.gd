@@ -6,3 +6,4 @@ extends Resource
 @export var base_stats: Dictionary[StringName, int] = {}
 @export var starting_skills: Array[Skill] = []
 @export var starting_passives: Array[StringName] = []
+@export var sprite: Texture2D

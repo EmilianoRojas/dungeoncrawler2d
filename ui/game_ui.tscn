@@ -70,6 +70,12 @@ layout_mode = 2
 text = "Player"
 horizontal_alignment = 1
 
+[node name="SpriteRect" type="TextureRect" parent="BattleContainer/PlayerInfo"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
 [node name="HPBar" parent="BattleContainer/PlayerInfo" instance=ExtResource("2_hpbar")]
 layout_mode = 2
 
@@ -89,6 +95,12 @@ alignment = 1
 layout_mode = 2
 text = "Enemy"
 horizontal_alignment = 1
+
+[node name="SpriteRect" type="TextureRect" parent="BattleContainer/EnemyInfo"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
 
 [node name="HPBar" parent="BattleContainer/EnemyInfo" instance=ExtResource("2_hpbar")]
 layout_mode = 2

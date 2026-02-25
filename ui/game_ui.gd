@@ -21,8 +21,10 @@ signal loot_decision(equip: bool)
 
 @onready var player_hp: HPBar = $BattleContainer/PlayerInfo/HPBar
 @onready var player_shield: HPBar = $BattleContainer/PlayerInfo/ShieldBar
+@onready var player_sprite: TextureRect = $BattleContainer/PlayerInfo/SpriteRect
 @onready var enemy_hp: HPBar = $BattleContainer/EnemyInfo/HPBar
 @onready var enemy_shield: HPBar = $BattleContainer/EnemyInfo/ShieldBar
+@onready var enemy_sprite: TextureRect = $BattleContainer/EnemyInfo/SpriteRect
 @onready var enemy_label: Label = $BattleContainer/EnemyInfo/Label
 
 # Log
@@ -98,12 +100,24 @@ func show_room_selection(choices: Array[MapNode]) -> void:
 
 func initialize_battle(player: Entity, enemies: Array[Entity]) -> void:
 	update_hp(player, true)
+	if player.sprite:
+		player_sprite.texture = player.sprite
+		player_sprite.visible = true
+	else:
+		player_sprite.visible = false
+		
 	if enemies.size() > 0:
 		update_hp(enemies[0], false)
 		enemy_label.text = enemies[0].name
+		if enemies[0].sprite:
+			enemy_sprite.texture = enemies[0].sprite
+			enemy_sprite.visible = true
+		else:
+			enemy_sprite.visible = false
 	else:
 		enemy_hp.visible = false
 		enemy_shield.visible = false
+		enemy_sprite.visible = false
 	
 	_populate_skills(player)
 

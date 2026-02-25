@@ -23,6 +23,9 @@ var xp: int = 0
 var level: int = 1
 var max_skill_slots: int = 4
 
+# Visuals
+var sprite: Texture2D
+
 # Camp Item (GameSpec §1: consumable selected at run start)
 var camp_item: CampItemResource = null
 var camp_item_cooldown: int = 0
@@ -95,6 +98,9 @@ func initialize() -> void:
 
 
 func apply_class(class_data: ClassData) -> void:
+	if class_data.sprite:
+		self.sprite = class_data.sprite
+		
 	# 1. Apply Base Stats
 	for key in class_data.base_stats:
 		if key is StringName:

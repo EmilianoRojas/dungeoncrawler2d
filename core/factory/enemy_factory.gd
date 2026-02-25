@@ -10,6 +10,8 @@ static var _templates_cache: Array[EnemyTemplate] = []
 static func create_enemy(template: EnemyTemplate, dungeon_floor: int) -> Entity:
 	var enemy = Entity.new()
 	enemy.name = template.enemy_name
+	if template.sprite:
+		enemy.sprite = template.sprite
 	enemy.team = Entity.Team.ENEMY
 	enemy.initialize()
 	
