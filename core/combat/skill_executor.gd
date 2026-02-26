@@ -12,6 +12,46 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 	# 1. Trigger ON_SKILL_CAST (before any rolls)
 	source.effects.dispatch(EffectResource.Trigger.ON_SKILL_CAST, context)
 
+	# === OBSERVE SKILL ===
+	if skill.is_observe:
+		# Reveal enemy info
+		var enemy_hp = target.stats.get_current(StatTypes.HP)
+		var enemy_max_hp = target.stats.get_stat(StatTypes.MAX_HP)
+		var enemy_shield = target.stats.get_current(StatTypes.SHIELD)
+		var enemy_max_shield = target.stats.get_stat(StatTypes.MAX_SHIELD)
+		
+		var hp_text = "[color=red]HP: %d/%d[/color]" % [enemy_hp, enemy_max_hp]
+		if enemy_max_shield > 0:
+			hp_text += " | [color=cyan]Shield: %d/%d[/color]" % [enemy_shield, enemy_max_shield]
+		
+		# Reveal next action (peek at enemy AI)
+		var next_action_text = ""
+		if target.skills and target.skills.known_skills.size() > 0:
+			# Enemy AI uses first available skill
+			var next_skill: Skill = null
+			for s in target.skills.known_skills:
+				if target.skills.is_skill_ready(s):
+					next_skill = s
+					break
+			if next_skill:
+				next_action_text = " | Next: [color=yellow]%s[/color]" % next_skill.skill_name
+			else:
+				next_action_text = " | Next: [color=gray]Waiting (all on CD)[/color]"
+		
+		GlobalEventBus.dispatch("combat_log", {
+			"message": "[color=white]👁 OBSERVE[/color] %s — %s%s" % [target.name, hp_text, next_action_text]
+		})
+		
+		# Dispatch observe event so UI can reveal hidden HP bars
+		GlobalEventBus.dispatch("observe_used", {
+			"source": source, "target": target
+		})
+		
+		# Apply on_cast effects
+		for effect in skill.on_cast_effects:
+			source.effects.apply_effect(effect)
+		return
+
 	# === SELF-HEAL SKILLS ===
 	if skill.is_self_heal:
 		var heal_amount = FormulaCalculator.calculate_damage(skill, source)

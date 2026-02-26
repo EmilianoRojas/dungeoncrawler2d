@@ -24,6 +24,7 @@ enum ScalingType {
 
 # Skill type
 @export var is_self_heal: bool = false # If true, heals the caster instead of damaging target
+@export var is_observe: bool = false # If true, reveals enemy HP and next action
 
 # Progression
 @export var skill_level: int = 1 # Increases via Skill Draft upgrade (+10% damage per level)
