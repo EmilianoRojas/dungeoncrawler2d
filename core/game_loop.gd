@@ -184,9 +184,7 @@ func _process_room_event(node: MapNode) -> void:
 			_log("Found a Chest!")
 			_process_chest_loot()
 		MapNode.Type.EVENT:
-			_log("Event Triggered! (Not implemented)")
-			dungeon_manager.complete_current_room()
-			call_deferred("_on_room_completed")
+			_start_event()
 		MapNode.Type.CAMP:
 			_log("Found a Camp. Choose your action.")
 			_show_camp_menu()
@@ -452,6 +450,91 @@ func _finish_post_combat() -> void:
 	
 	await get_tree().create_timer(1.0).timeout
 	_on_room_completed()
+
+# --- EVENTS ---
+
+var _current_event: EventData = null
+var _event_panel: EventPanel = null
+
+func _start_event() -> void:
+	current_state = State.EVENT
+	game_ui.set_mode(false)
+	
+	var all_events = EventFactory.get_all_events()
+	_current_event = EventSystem.pick_random_event(all_events, dungeon_manager.current_floor)
+	
+	if not _current_event:
+		_log("Nothing of interest here.")
+		dungeon_manager.complete_current_room()
+		call_deferred("_on_room_completed")
+		return
+	
+	_log("📜 %s" % _current_event.title)
+	
+	_event_panel = EventPanel.new()
+	_event_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	game_ui.add_child(_event_panel)
+	_event_panel.setup(_current_event)
+	_event_panel.event_choice_made.connect(_on_event_choice)
+	_event_panel.event_dismissed.connect(_on_event_dismissed)
+
+func _on_event_choice(choice_index: int) -> void:
+	if not _current_event or choice_index < 0 or choice_index >= _current_event.choices.size():
+		return
+	
+	var choice = _current_event.choices[choice_index]
+	var result_text = EventSystem.resolve_choice(player_entity, choice)
+	
+	_log(result_text)
+	game_ui.update_hp(player_entity, true)
+	
+	# Update level info in case XP was gained
+	game_ui.update_level_info(
+		player_entity.level,
+		player_entity.xp,
+		LevelUpSystem.xp_for_level(player_entity.level)
+	)
+	
+	# Handle RANDOM_LOOT outcomes
+	var needs_loot = false
+	if choice.outcome_type == EventChoice.OutcomeType.RANDOM_LOOT:
+		needs_loot = true
+	elif choice.outcome_type == EventChoice.OutcomeType.GAMBLE:
+		# Check if gamble won and reward was loot
+		if choice.gamble_win_type == EventChoice.OutcomeType.RANDOM_LOOT:
+			# We can't easily know if we won, so check result text
+			if result_text == choice.gamble_win_text or (choice.gamble_win_text == "" and result_text == "You got lucky!"):
+				needs_loot = true
+	
+	if _event_panel:
+		_event_panel.show_result(result_text)
+	
+	# If loot was awarded, we'll handle it after dismissal
+	if needs_loot:
+		_pending_loot_source = "chest" # Re-use chest flow
+		_pending_loot.clear()
+		var item = ItemFactory.generate_random_item(dungeon_manager.current_floor)
+		if item:
+			_pending_loot.append(item)
+
+func _on_event_dismissed() -> void:
+	if _event_panel:
+		_event_panel.queue_free()
+		_event_panel = null
+	_current_event = null
+	
+	# Check if player died from event damage
+	if not player_entity.is_alive():
+		_show_game_over_screen()
+		return
+	
+	# Process any pending loot from the event
+	if not _pending_loot.is_empty():
+		_process_loot_queue()
+		return
+	
+	dungeon_manager.complete_current_room()
+	call_deferred("_on_room_completed")
 
 # --- CAMP MENU ---
 
