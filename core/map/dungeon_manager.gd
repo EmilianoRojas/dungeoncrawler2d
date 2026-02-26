@@ -20,6 +20,7 @@ var current_depth: int = 0
 var current_room: MapNode
 var next_room_choices: Array[MapNode] = []
 var floor_modifiers: Array[MapNode.Modifier] = []
+var rooms_completed: int = 0
 
 ## Configure the dungeon manager from a DungeonData resource.
 func configure(data: DungeonData) -> void:
@@ -73,8 +74,13 @@ func advance_to_room(choice_index: int) -> MapNode:
 	
 	return current_room
 
+func is_dungeon_complete() -> bool:
+	# Dungeon is complete when we've beaten the boss on the final floor
+	return current_floor >= total_floors and current_room and current_room.type == MapNode.Type.BOSS and current_room.completed
+
 func complete_current_room() -> void:
 	current_room.completed = true
+	rooms_completed += 1
 	
 	# Check if this was the boss — floor complete
 	if current_room.type == MapNode.Type.BOSS:

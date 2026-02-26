@@ -240,11 +240,13 @@ func _on_battle_ended(result: TurnManager.Phase) -> void:
 		_log("Victory! Proceeding.")
 		# Reset shield after battle (GameSpec §3)
 		player_entity.stats.reset_shield()
+		# Check if this was the final boss of the dungeon
+		var is_final_boss = _is_final_boss()
 		# Generate loot from the enemy and show loot UI
-		_process_combat_loot()
+		_process_combat_loot(is_final_boss)
 	else:
 		_log("DEFEATED.")
-		# Handle Game Over (Run ends, reset everything)
+		_show_game_over_screen()
 
 func _on_room_completed() -> void:
 	# Show next choices
@@ -264,7 +266,15 @@ func _on_damage_event(data: Dictionary) -> void:
 
 # --- LOOT PROCESSING ---
 
-func _process_combat_loot() -> void:
+var _is_final_boss_victory: bool = false
+
+func _is_final_boss() -> bool:
+	if not dungeon_manager or not dungeon_manager.current_room:
+		return false
+	return dungeon_manager.current_floor >= dungeon_manager.total_floors and dungeon_manager.current_room.type == MapNode.Type.BOSS
+
+func _process_combat_loot(is_final_boss: bool = false) -> void:
+	_is_final_boss_victory = is_final_boss
 	var current_room = dungeon_manager.current_room
 	var is_elite = current_room and current_room.type == MapNode.Type.ELITE
 	var is_boss = current_room and current_room.type == MapNode.Type.BOSS
@@ -362,6 +372,12 @@ func _finish_loot_phase() -> void:
 			return
 		
 		dungeon_manager.complete_current_room()
+		
+		if _is_final_boss_victory:
+			await get_tree().create_timer(1.0).timeout
+			_show_victory_screen()
+			return
+		
 		await get_tree().create_timer(1.0).timeout
 		_on_room_completed()
 	else:
@@ -428,6 +444,12 @@ func _on_skill_draft_choice(action: String, slot_index: int) -> void:
 
 func _finish_post_combat() -> void:
 	dungeon_manager.complete_current_room()
+	
+	if _is_final_boss_victory:
+		await get_tree().create_timer(1.0).timeout
+		_show_victory_screen()
+		return
+	
 	await get_tree().create_timer(1.0).timeout
 	_on_room_completed()
 
@@ -459,3 +481,55 @@ func _on_camp_action(action: String) -> void:
 	
 	dungeon_manager.complete_current_room()
 	call_deferred("_on_room_completed")
+
+# --- GAME OVER / VICTORY ---
+
+func _get_run_stats() -> Dictionary:
+	var class_name_str = "Unknown"
+	if Engine.has_meta("selected_class"):
+		var cls = Engine.get_meta("selected_class") as ClassData
+		if cls:
+			class_name_str = cls.title
+	
+	return {
+		"class_name": class_name_str,
+		"level": player_entity.level if player_entity else 1,
+		"floor": dungeon_manager.current_floor if dungeon_manager else 1,
+		"depth": dungeon_manager.current_depth if dungeon_manager else 0,
+		"rooms_cleared": dungeon_manager.rooms_completed if dungeon_manager else 0,
+	}
+
+func _show_game_over_screen() -> void:
+	current_state = State.MENU
+	game_ui.set_mode(false)
+	
+	var screen = GameOverScreen.new()
+	screen.set_anchors_preset(Control.PRESET_FULL_RECT)
+	game_ui.add_child(screen)
+	screen.setup(_get_run_stats())
+	screen.return_to_lobby.connect(_return_to_lobby)
+
+func _show_victory_screen() -> void:
+	current_state = State.MENU
+	game_ui.set_mode(false)
+	
+	var screen = VictoryScreen.new()
+	screen.set_anchors_preset(Control.PRESET_FULL_RECT)
+	game_ui.add_child(screen)
+	screen.setup(_get_run_stats())
+	screen.return_to_lobby.connect(_return_to_lobby)
+
+func _return_to_lobby() -> void:
+	# Clean up Engine metas from this run
+	if Engine.has_meta("selected_class"):
+		Engine.remove_meta("selected_class")
+	if Engine.has_meta("selected_camp_item"):
+		Engine.remove_meta("selected_camp_item")
+	if Engine.has_meta("selected_dungeon"):
+		Engine.remove_meta("selected_dungeon")
+	
+	# Reset event bus
+	GlobalEventBus.reset()
+	
+	# Return to lobby
+	get_tree().change_scene_to_file("res://ui/lobby.tscn")
