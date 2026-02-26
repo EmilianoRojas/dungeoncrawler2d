@@ -506,7 +506,7 @@ public class Passive_Berserker : PassiveAbility
         _owner.OnBeforeDamageDealt -= DoubleOutgoingDamage;
     }
 }
-
+```
 ### Por qué esta estructura es útil:
 1. **Data-Driven:** Las pasivas como *Hard Shield* se implementan como archivos `.tres` con trigger `ON_DAMAGE_RECEIVED_CALC` y operation `REDUCE_DAMAGE_PERCENT`, sin código custom.
 2. **Desacoplamiento:** `StatsComponent` no sabe qué efectos existen. Solo recibe el daño ya modificado.
@@ -637,3 +637,340 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 	for effect in skill.on_hit_effects:
 		target.effects.apply_effect(effect)
 ```
+
+### 9.9. Integración de Efectos Visuales (VFX Timing & Animation)
+Para que los efectos visuales (Ej. Una Bola de Hielo formándose) se sincronicen correctamente con la aplicación matemática del daño, el sistema desacopla el momento del "Casteo" del momento del "Impacto".
+
+Esto requiere dos modificaciones en la arquitectura:
+1. **Actualizar el `SkillData`:** Añadir referencias al *Prefab* o escena del efecto visual y un valor de retraso (`ImpactDelay`).
+2. **Uso de Corrutinas / Asincronía:** El `SkillController` pausa la ejecución lógica del daño hasta que la animación visual alcanza su punto culminante.
+
+```csharp
+// 1. Actualización estructural del Data Template
+public class SkillData : ScriptableObject // (O Resource en Godot)
+{
+    // ... stats de daño, cooldown, etc ...
+    
+    [Header("Visuals")]
+    public GameObject VfxPrefab; // El efecto visual (Ej. Prefab "IceBall")
+    public float ImpactDelay;    // Tiempo en segundos antes de que aplique el daño
+}
+
+// 2. Modificación en el SkillController para manejar el tiempo
+using System.Collections;
+using UnityEngine; // O manejo de asincronía nativo del motor
+
+public class SkillController 
+{
+    // (Variables y métodos anteriores omitidos por brevedad)
+
+    // Método principal que llama el jugador/IA
+    public void CastSkill(int skillIndex, BattleEntity target) 
+    {
+        if (skillIndex < 0 || skillIndex >= EquippedSkills.Count) return;
+
+        SkillInstance skillToCast = EquippedSkills[skillIndex];
+        if (!skillToCast.IsReady()) return;
+
+        // Iniciar la secuencia asíncrona
+        _owner.StartCoroutine(ExecuteSkillSequence(skillToCast, target));
+        
+        skillToCast.StartCooldown();
+    }
+
+    // La Corrutina que maneja el flujo del tiempo
+    private IEnumerator ExecuteSkillSequence(SkillInstance skill, BattleEntity target) 
+    {
+        // 1. Calcular el daño por adelantado
+        DamageInfo damagePackage = CalculateDamage(skill);
+        _owner.TriggerBeforeDamageDealt(damagePackage); // Pasivas como Berserker actúan aquí
+
+        // 2. Instanciar el Efecto Visual (VFX)
+        if (skill.Data.VfxPrefab != null) 
+        {
+            // Se spawnea el efecto de "Hielo formándose" en la posición del objetivo
+            GameObject vfxInstance = Object.Instantiate(skill.Data.VfxPrefab, target.Transform.position, Quaternion.identity);
+            
+            // Opcional: El VFX podría tener su propio script que dispare un evento al terminar,
+            // pero usar un 'ImpactDelay' desde los datos es más fácil de balancear.
+        }
+
+        // 3. Esperar a que la animación termine (Ej. 1.5 segundos)
+        yield return new WaitForSeconds(skill.Data.ImpactDelay);
+
+        // 4. Aplicar el daño EXACTAMENTE cuando el efecto visual hace impacto
+        target.TakeDamage(damagePackage);
+        
+        Debug.Log($"[{skill.Data.Name}] impactó al objetivo después de {skill.Data.ImpactDelay} segundos.");
+    }
+}
+```
+
+### 9.9.1. Métodos de Sincronización (Timing vs Eventos)
+Para determinar el momento exacto en el que la habilidad debe aplicar el daño matemático (el `ImpactDelay`), el equipo de desarrollo puede optar por dos flujos de trabajo dependiendo de la complejidad del efecto:
+
+
+
+#### Método 1: Cálculo Manual en la Línea de Tiempo (Data-Driven)
+Es el enfoque más rápido para prototipar. Consiste en revisar el asset visual (la animación o el sistema de partículas) y calcular el tiempo exacto del impacto.
+* **¿Cómo se hace?:** Si la animación del "Cast de Hielo" se reproduce a 60 FPS (Frames por segundo) y el impacto visual ocurre en el frame 45, la matemática es `45 / 60 = 0.75 segundos`. 
+* Ese `0.75` es el valor que el diseñador ingresa manualmente en el campo `ImpactDelay` del `SkillData`.
+* **Pro:** Todo se controla desde el archivo de datos sin tocar el objeto visual.
+* **Contra:** Si el artista cambia la duración de la animación, el diseñador debe recordar actualizar el número en el `SkillData`.
+
+
+**Decisión del Proyecto:** Para mantener el código limpio y los datos centralizados, se utilizará el **Método 1 (ImpactDelay en el Data)** para habilidades simples o instantáneas.
+
+### 10 EnemyFactory.cs (Generador y Escalado de Enemigos)
+El sistema responsable de instanciar a los adversarios. Utiliza un *Prefab* o escena base que contiene el componente `BattleEntity` y le inyecta los datos de un `EnemyTemplate`. Luego, aplica matemáticas de escalado basadas en el nivel del piso actual y los modificadores de la sala.
+
+
+
+```csharp
+using System.Collections.Generic;
+using UnityEngine; // O el equivalente en tu motor
+
+public enum RoomModifier { None, EliteEnemy, Boss, Catacomb, Submerged, Trace }
+
+public class EnemyFactory : MonoBehaviour 
+{
+    [Header("Base References")]
+    public GameObject EnemyBasePrefab; // El prefab que tiene el script BattleEntity vacío
+
+    // Método principal llamado al entrar a un nodo de combate
+    public BattleEntity SpawnEnemy(EnemyTemplate template, int currentFloor, List<RoomModifier> roomModifiers) 
+    {
+        // 1. Instanciar el contenedor vacío
+        GameObject enemyObject = Instantiate(EnemyBasePrefab);
+        BattleEntity newEnemy = enemyObject.GetComponent<BattleEntity>();
+
+        // 2. Inicializar componentes base (Aquí se cargan las habilidades garantizadas, como Vampiric Touch)
+        newEnemy.IsPlayer = false;
+        newEnemy.EntityName = template.EntityName;
+        newEnemy.Initialize(template);
+
+        // 3. Escalado Procedural por Piso (RNG / Math)
+        // Ejemplo: Cada piso aumenta los stats base en un 15%
+        float floorMultiplier = 1.0f + (currentFloor * 0.15f); 
+        
+        newEnemy.Stats.MAXHP = Mathf.RoundToInt(template.BaseMAXHP * floorMultiplier);
+        newEnemy.Stats.POW = Mathf.RoundToInt(template.BasePOW * floorMultiplier);
+        
+        // Atributos como STR o CRIT podrían escalar más lento o mantenerse fijos según el balanceo
+        newEnemy.Stats.STR = Mathf.RoundToInt(template.BaseSTR * (1.0f + (currentFloor * 0.05f)));
+
+        // 4. Aplicar Modificadores de Sala (Iconos)
+        if (roomModifiers.Contains(RoomModifier.EliteEnemy)) 
+        {
+            ApplyEliteModifiers(newEnemy);
+        }
+        else if (roomModifiers.Contains(RoomModifier.Boss)) 
+        {
+            ApplyBossModifiers(newEnemy);
+        }
+
+        // 5. Preparación final para el combate
+        // Asegurarnos de que el enemigo empiece con la vida y el escudo al máximo tras el escalado
+        newEnemy.Stats.CurrentHP = newEnemy.Stats.MAXHP;
+        newEnemy.Stats.CurrentShield = newEnemy.Stats.MaxShield;
+
+        return newEnemy;
+    }
+
+    // Lógica específica para inyectar dificultad a los Élites
+    private void ApplyEliteModifiers(BattleEntity enemy) 
+    {
+        // 1. Aumento masivo de estadísticas
+        enemy.Stats.MAXHP *= 1.5f; // 50% más de vida
+        enemy.Stats.POW *= 1.2f;   // 20% más de poder de habilidades
+
+        // 2. Inyección de Pasiva de Élite Aleatoria
+        PassiveAbility elitePassive = GetRandomElitePassive();
+        enemy.Effects.AddPassive(elitePassive);
+        
+        enemy.EntityName = "Elite " + enemy.EntityName;
+        Debug.Log($"[EnemyFactory] Generado {enemy.EntityName} con pasiva letal: {elitePassive.Name}");
+    }
+
+    private void ApplyBossModifiers(BattleEntity enemy) 
+    {
+        // Lógica similar pero con multiplicadores de Jefe y pasivas inamovibles (Inmunidad a Insta-kill, etc.)
+    }
+
+    private PassiveAbility GetRandomElitePassive() 
+    {
+        // Retorna pasivas agresivas del pool (Ej. Berserker, Poisonous, Weaken)
+        return null;
+    }
+}
+```
+### Notas sobre el diseño del Factory de Enemigos:
+1. **Separación de Lógica:** Fíjate cómo el Vampiro obtiene su *Vampiric Touch* de forma invisible. Eso ocurre dentro de `newEnemy.Initialize(template)`, el cual llama internamente al `SkillController` que programamos pasos atrás y le carga las `StartingSkills` definidas en su archivo de datos. 
+2. **Multiplicadores Dinámicos:** El `floorMultiplier` es tu mejor amigo para balancear el juego. Si notas que el piso 10 es muy fácil durante el testeo, solo cambias el `0.15f` por un `0.20f` y automáticamente todos los enemigos del juego se vuelven más duros en el *late-game*.
+3. **Inyección de Élite:** Al agregar pasivas aleatorias a los enemigos de élite (como darle la pasiva *Berserker* a un Vampiro), obligas al jugador a cambiar su estrategia en cada *run*, incluso si se enfrenta al mismo modelo de enemigo.
+
+
+
+### 10.1. Definición y Mecánicas de Jefes (Boss Encounters)
+Los Jefes de piso utilizan la misma estructura base `BattleEntity` que cualquier otro enemigo. Su complejidad no recae en un código espagueti de inteligencia artificial, sino en el **Diseño Basado en Datos (`EnemyTemplate`)** y en el uso de **Pasivas de Fase (Phase Passives)** conectadas al Event Bus.
+
+#### 10.2. Modificadores de Jefe (EnemyFactory)
+Cuando el generador de mazmorras determina que la sala actual tiene el icono de `Boss`, la fábrica aplica reglas estrictas de escalado y protección.
+
+```csharp
+// Dentro de EnemyFactory.cs
+
+private void ApplyBossModifiers(BattleEntity boss) 
+{
+    // 1. Escalado masivo de Supervivencia
+    boss.Stats.MAXHP *= 3.0f; // 300% de vida respecto a un enemigo normal del mismo piso
+    boss.Stats.MaxShield *= 2.0f;
+
+    // 2. Inmunidades de Sistema (Usando pasivas ocultas)
+    // Se le inyecta una pasiva que anula cualquier intento de Insta-kill o aturdimiento permanente
+    boss.Effects.AddPassive(new Passive_BossImmunity());
+
+    boss.EntityName = "Piso " + CurrentFloor + " Boss: " + boss.EntityName;
+    Debug.Log($"[EnemyFactory] Generado JEFE DE PISO: {boss.EntityName}");
+}
+```
+
+### 10.1.2. Mecánicas de Fase mediante Pasivas (Phase Transitions)
+
+Para evitar programar un script único para cada jefe, las mecánicas especiales (como entrar en "Fase 2") se construyen como habilidades pasivas que escuchan el HP del jefe a través del evento OnAfterDamageTaken.
+
+Ejemplo: Pasiva de "Segunda Fase" (El Rey Esqueleto revive más fuerte)
+
+public class Passive_SkeletonKingPhase2 : PassiveAbility 
+{
+    private BattleEntity _owner;
+    private bool _phase2Triggered = false;
+
+    public override void Initialize(BattleEntity owner) 
+    {
+        _owner = owner;
+        // Escuchamos cada vez que el jefe recibe daño
+        _owner.OnAfterDamageTaken += CheckHealthForPhase2;
+    }
+
+    private void CheckHealthForPhase2(DamageInfo damage) 
+    {
+        if (_phase2Triggered) return;
+
+        // Si la vida cae por debajo del 50%
+        float healthPercentage = _owner.Stats.CurrentHP / _owner.Stats.MAXHP;
+        
+        if (healthPercentage <= 0.50f) 
+        {
+            _phase2Triggered = true;
+            EnterPhase2();
+        }
+    }
+
+    private void EnterPhase2() 
+    {
+        Debug.Log($"¡{_owner.EntityName} entra en FASE 2!");
+
+        // 1. Alterar Estadísticas Dinámicamente
+        _owner.Stats.STR += 50; 
+        
+        // 2. Limpiar Debuffs (El jefe se quita el veneno, quemaduras, etc.)
+        _owner.Effects.ActiveStatusEffects.Clear();
+
+        // 3. Modificar el comportamiento (Ej. Reducir Cooldowns a 0 para un ataque inmediato)
+        _owner.Skills.ReduceCooldowns(99); 
+        
+        // Aquí se podría disparar un evento visual (VFX de explosión, cambio de Sprite, etc.)
+    }
+
+    public override void Dispose() 
+    {
+        _owner.OnAfterDamageTaken -= CheckHealthForPhase2;
+    }
+}
+
+### Por qué esta estructura es brillante para los Jefes:
+1. **Fácil de Testear:** Si quieres probar la Fase 2 del jefe, no necesitas jugar 20 minutos de partida. Simplemente le bajas la vida en el inspector y la pasiva `Passive_SkeletonKingPhase2` se disparará sola.
+2. **Reutilización:** Puedes crear una pasiva genérica llamada `Passive_EnrageAtLowHealth` (Se enfurece con poca vida) y asignársela a 5 jefes distintos desde sus archivos de datos, ahorrando muchísimo tiempo de programación.
+3. **Modificadores de Mazmorra:** Si recuerdas, en el GDD pusimos iconos como **Trace** (el boss aparece antes) o **Submerged** (el boss aparece después). Como el boss depende del `EnemyFactory`, si aparece antes (ej. en el piso 2 en lugar del 5), el Factory automáticamente le multiplicará la vida por el nivel del piso 2, asegurando que esté balanceado sin importar cuándo lo enfrentes.
+
+
+
+### 10.2. Gestión de Assets y Pools de Enemigos (Data Management)
+Para asegurar que los Jefes (Bosses) y los Enemigos de Élite no aparezcan como combates comunes por error, los archivos de datos (`EnemyTemplate`) se organizan en carpetas estrictamente separadas. El sistema carga los enemigos seleccionando aleatoriamente un archivo desde la ruta correspondiente al tipo de nodo.
+
+#### 10.2.1 Estructura de Directorios Recomendada
+Todo el contenido estático debe vivir en una jerarquía clara dentro del proyecto:
+```text
+📦 Data
+ ┣ 📂 Skills
+ ┣ 📂 Items
+ ┗ 📂 Enemies
+    ┣ 📂 Common       (Ej. Bat.asset, Slime.asset)
+    ┣ 📂 Elites       (Ej. ArmoredKnight.asset, Vampire.asset)
+    ┗ 📂 Bosses
+       ┣ 📜 SkeletonKing.asset
+       ┣ 📜 Dragon.asset
+       ┗ 📜 Lich.asset
+
+```
+
+9.11.2. Selección de Jefes en el Generador (Carga por Directorio/Pool)
+
+El RoomManager (o Generador de la Mazmorra) mantiene listas separadas para cada categoría. Cuando el jugador entra a una sala con el icono de Boss, el sistema busca únicamente en la lista o carpeta de Jefes.
+
+Ejemplo de implementación (Carga dinámica de Jefes):
+```
+using System.Collections.Generic;
+using UnityEngine; // En Godot sería usar DirAccess para leer la carpeta "res://Data/Enemies/Bosses/"
+
+public class DungeonManager : MonoBehaviour 
+{
+    [Header("Enemy Pools (Asignados en el Inspector o cargados dinámicamente)")]
+    public List<EnemyTemplate> CommonEnemiesPool;
+    public List<EnemyTemplate> EliteEnemiesPool;
+    public List<EnemyTemplate> BossesPool; // Solo contiene Jefes
+
+    private EnemyFactory _enemyFactory;
+
+    // Se llama cuando el jugador elige entrar a una sala
+    public BattleEntity EnterRoom(RoomNode targetRoom, int currentFloor) 
+    {
+        EnemyTemplate selectedTemplate = null;
+
+        // 1. Determinar de qué "Pool" sacar al enemigo según los iconos de la sala
+        if (targetRoom.Modifiers.Contains(RoomModifier.Boss)) 
+        {
+            // Seleccionar un jefe al azar SOLO de la lista de jefes
+            selectedTemplate = GetRandomTemplateFromPool(BossesPool);
+        }
+        else if (targetRoom.Modifiers.Contains(RoomModifier.EliteEnemy)) 
+        {
+            selectedTemplate = GetRandomTemplateFromPool(EliteEnemiesPool);
+        }
+        else 
+        {
+            selectedTemplate = GetRandomTemplateFromPool(CommonEnemiesPool);
+        }
+
+        // 2. Mandar a fabricar la instancia física del enemigo
+        return _enemyFactory.SpawnEnemy(selectedTemplate, currentFloor, targetRoom.Modifiers);
+    }
+
+    private EnemyTemplate GetRandomTemplateFromPool(List<EnemyTemplate> pool) 
+    {
+        if (pool == null || pool.Count == 0) return null;
+        
+        int randomIndex = Random.Range(0, pool.Count);
+        return pool[randomIndex];
+    }
+}
+```
+
+### Ventajas de esta separación:
+1. **Seguridad Total:** Es imposible que el código de `CommonEnemiesPool` devuelva al `SkeletonKing` porque están en listas separadas y cargan desde carpetas distintas.
+2. **Escalado de Pisos:** Puedes expandir esto fácilmente. Por ejemplo, en lugar de una sola carpeta `Common`, podrías tener `Common/Floor1_to_3` y `Common/Floor4_to_6`. Así, el Spawner escoge el "Pool" correcto dependiendo del piso actual, asegurando que los murciélagos de nivel bajo dejen de aparecer cuando llegas al nivel del volcán.
+
+Con esto, la arquitectura de datos queda completamente blindada y organizada.
+
+\
