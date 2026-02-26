@@ -6,6 +6,11 @@ class_name EnemyFactory
 # Cache loaded templates
 static var _templates_cache: Array[EnemyTemplate] = []
 
+## Stat categories for differentiated scaling (GameSpec §10)
+## HP/Shield scale at full rate, combat stats scale slower, utility barely scales
+const SCALING_FULL: Array[StringName] = [StatTypes.MAX_HP, StatTypes.HP, StatTypes.MAX_SHIELD, StatTypes.SHIELD]
+const SCALING_SLOW_FACTOR: float = 0.33 # Combat stats scale at 33% of the base rate (e.g. 0.15 * 0.33 ≈ 0.05)
+
 ## Create an enemy from a specific template, scaled by floor.
 static func create_enemy(template: EnemyTemplate, dungeon_floor: int) -> Entity:
 	var enemy = Entity.new()
@@ -15,16 +20,21 @@ static func create_enemy(template: EnemyTemplate, dungeon_floor: int) -> Entity:
 	enemy.team = Entity.Team.ENEMY
 	enemy.initialize()
 	
-	# Apply stats with floor scaling
-	var scale_mult = 1.0 + dungeon_floor * template.stat_scaling
+	# Apply stats with floor scaling (GameSpec §10)
+	# HP/Shield: full scaling rate
+	# Combat stats (STR, DEX, INT, etc.): slower scaling rate
+	var base_rate = template.stat_scaling
 	for stat_key in template.base_stats:
 		var base_val = template.base_stats[stat_key]
-		var scaled_val = int(base_val * scale_mult)
+		var rate = base_rate
+		if stat_key not in SCALING_FULL:
+			rate = base_rate * SCALING_SLOW_FACTOR
+		var scaled_val = int(base_val * (1.0 + dungeon_floor * rate))
 		enemy.stats.set_base_stat(stat_key, scaled_val)
 	
 	# Ensure HP = MAX_HP after scaling
 	if template.base_stats.has(StatTypes.MAX_HP):
-		var scaled_hp = int(template.base_stats[StatTypes.MAX_HP] * scale_mult)
+		var scaled_hp = int(template.base_stats[StatTypes.MAX_HP] * (1.0 + dungeon_floor * base_rate))
 		enemy.stats.set_base_stat(StatTypes.HP, scaled_hp)
 	
 	enemy.stats.finalize_initialization()
@@ -33,6 +43,13 @@ static func create_enemy(template: EnemyTemplate, dungeon_floor: int) -> Entity:
 	for skill in template.skills:
 		if skill:
 			enemy.skills.learn_skill(skill.duplicate())
+	
+	# Apply tier modifiers (GameSpec §10)
+	match template.tier:
+		EnemyTemplate.Tier.ELITE:
+			_apply_elite_modifiers(enemy)
+		EnemyTemplate.Tier.BOSS:
+			_apply_boss_modifiers(enemy)
 	
 	return enemy
 
@@ -81,14 +98,85 @@ static func create_from_pool(pool: Array[EnemyTemplate], boss_pool: Array[EnemyT
 	_apply_scaling_mult(enemy, scaling_mult)
 	return enemy
 
+## Apply Elite modifiers (GameSpec §10): +50% HP, +20% POW, random elite passive
+static func _apply_elite_modifiers(enemy: Entity) -> void:
+	# +50% HP
+	var max_hp = enemy.stats.base.get(StatTypes.MAX_HP, 50)
+	enemy.stats.set_base_stat(StatTypes.MAX_HP, int(max_hp * 1.5))
+	enemy.stats.set_base_stat(StatTypes.HP, int(max_hp * 1.5))
+	
+	# +20% POW (add flat if no POW exists)
+	var pow_val = enemy.stats.base.get(StatTypes.POWER, 0)
+	if pow_val > 0:
+		enemy.stats.set_base_stat(StatTypes.POWER, int(pow_val * 1.2))
+	else:
+		# Give elites some POW even if template has none
+		var str_val = enemy.stats.base.get(StatTypes.STRENGTH, 5)
+		enemy.stats.set_base_stat(StatTypes.POWER, int(str_val * 0.2))
+	
+	enemy.stats.finalize_initialization()
+	
+	# Random elite passive (aggressive ones from GameSpec §10)
+	var elite_passive_ids: Array[StringName] = [
+		&"damage_reduce", &"counter", &"weaken",
+		&"poisonous", &"sniping", &"first_strike"
+	]
+	var chosen_id = elite_passive_ids[randi() % elite_passive_ids.size()]
+	_apply_passive_by_id(enemy, chosen_id, &"elite_passive")
+	
+	enemy.name = "Elite " + enemy.name
+
+## Apply Boss modifiers (GameSpec §10): 300% HP, 200% Shield, boss immunity
+static func _apply_boss_modifiers(enemy: Entity) -> void:
+	# 300% HP
+	var max_hp = enemy.stats.base.get(StatTypes.MAX_HP, 100)
+	enemy.stats.set_base_stat(StatTypes.MAX_HP, int(max_hp * 3.0))
+	enemy.stats.set_base_stat(StatTypes.HP, int(max_hp * 3.0))
+	
+	# 200% Shield (or grant shield if none)
+	var max_shield = enemy.stats.base.get(StatTypes.MAX_SHIELD, 0)
+	if max_shield > 0:
+		enemy.stats.set_base_stat(StatTypes.MAX_SHIELD, int(max_shield * 2.0))
+		enemy.stats.set_base_stat(StatTypes.SHIELD, int(max_shield * 2.0))
+	else:
+		# Give bosses a shield equal to 30% of their HP
+		var boss_hp = enemy.stats.base.get(StatTypes.MAX_HP, 100)
+		enemy.stats.set_base_stat(StatTypes.MAX_SHIELD, int(boss_hp * 0.3))
+		enemy.stats.set_base_stat(StatTypes.SHIELD, int(boss_hp * 0.3))
+	
+	# Boost offensive stats
+	var pow_val = enemy.stats.base.get(StatTypes.POWER, 0)
+	var str_val = enemy.stats.base.get(StatTypes.STRENGTH, 10)
+	enemy.stats.set_base_stat(StatTypes.POWER, int(max(pow_val, str_val * 0.3)))
+	
+	enemy.stats.finalize_initialization()
+	
+	# Boss immunity passive (avoid_critical — can't be insta-killed)
+	_apply_passive_by_id(enemy, &"avoid_critical", &"boss_passive")
+	
+	enemy.name = "Boss: " + enemy.name
+
+## Apply a passive by its PassiveLibrary ID.
+static func _apply_passive_by_id(enemy: Entity, passive_id: StringName, source_id: StringName) -> void:
+	if not enemy.passives:
+		return
+	var passive_info = PassiveLibrary.get_passive(passive_id)
+	if not passive_info.is_empty():
+		enemy.passives.add_passive(null, source_id, passive_info)
+
 ## Apply dungeon-specific stat scaling multiplier on top of base scaling.
 static func _apply_scaling_mult(enemy: Entity, mult: float) -> void:
 	if mult == 1.0:
 		return
-	for stat_key in [StatTypes.MAX_HP, StatTypes.HP, StatTypes.STRENGTH, StatTypes.DEFENSE, StatTypes.INTELLIGENCE]:
-		var current = enemy.stats.get_stat(stat_key)
+	for stat_key in enemy.stats.base:
+		var current = enemy.stats.base[stat_key]
 		if current > 0:
 			enemy.stats.set_base_stat(stat_key, int(current * mult))
+	# Sync HP with MAX_HP
+	if enemy.stats.base.has(StatTypes.MAX_HP):
+		enemy.stats.set_base_stat(StatTypes.HP, enemy.stats.base[StatTypes.MAX_HP])
+	if enemy.stats.base.has(StatTypes.MAX_SHIELD):
+		enemy.stats.set_base_stat(StatTypes.SHIELD, enemy.stats.base[StatTypes.MAX_SHIELD])
 	enemy.stats.finalize_initialization()
 
 ## Get all templates matching a tier.
