@@ -12,6 +12,25 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 	# 1. Trigger ON_SKILL_CAST (before any rolls)
 	source.effects.dispatch(EffectResource.Trigger.ON_SKILL_CAST, context)
 
+	# === SELF-HEAL SKILLS ===
+	if skill.is_self_heal:
+		var heal_amount = FormulaCalculator.calculate_damage(skill, source)
+		var heal_context = CombatContext.new(source, source, skill)
+		heal_context.heal_amount = heal_amount
+		CombatSystem.heal(heal_context)
+		GlobalEventBus.dispatch("combat_log", {
+			"message": "[color=green]HEAL![/color] %s healed for %d HP" % [source.name, heal_amount]
+		})
+		# Apply on_cast effects
+		for effect in skill.on_cast_effects:
+			source.effects.apply_effect(effect)
+		# Update damage_dealt event so UI refreshes
+		GlobalEventBus.dispatch("damage_dealt", {
+			"source": source, "target": source,
+			"damage": 0, "is_crit": false
+		})
+		return
+
 	# === COMBAT ROLL SEQUENCE ===
 
 	# 2. Avoid Check — target dodges entirely

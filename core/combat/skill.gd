@@ -22,5 +22,8 @@ enum ScalingType {
 @export var hit_chance: int = 90 # Percentage (0-100). 90 = 90% base hit
 @export var ignores_shield: bool = false # Penetrating: bypasses Shield bar
 
+# Skill type
+@export var is_self_heal: bool = false # If true, heals the caster instead of damaging target
+
 # Progression
 @export var skill_level: int = 1 # Increases via Skill Draft upgrade (+10% damage per level)

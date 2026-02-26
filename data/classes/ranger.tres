@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=3 format=3 uid="uid://ranger_class"]
+
+[ext_resource type="Script" uid="uid://n28pm4g4p03n" path="res://core/data/class_data.gd" id="1_class"]
+[ext_resource type="Resource" uid="uid://ice_shard_skill" path="res://data/skills/ice_shard.tres" id="2_skill"]
+
+[resource]
+script = ExtResource("1_class")
+title = "Ranger"
+description = "A keen-eyed marksman. High accuracy and critical damage make every shot count. Patient and precise."
+base_stats = Dictionary[StringName, int]({
+&"strength": 7,
+&"dexterity": 10,
+&"defense": 6,
+&"max_hp": 95,
+&"hp": 95,
+&"speed": 8,
+&"accuracy": 15,
+&"crit_chance": 10,
+&"crit_damage": 180
+})
+starting_skills = Array[Resource]([ExtResource("2_skill")])
+starting_passives = Array[StringName]([&"sniping"])

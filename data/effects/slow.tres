@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="EffectResource" load_steps=3 format=3 uid="uid://slow_effect"]
+
+[ext_resource type="Script" uid="uid://culub74taadkn" path="res://core/effects/effect_resource.gd" id="1_effect"]
+
+[ext_resource type="Script" uid="uid://cfvlgjv5oa1dd" path="res://core/stats/stat_modifier.gd" id="2_mod"]
+
+[sub_resource type="Resource" id="StatModifier_slow"]
+script = ExtResource("2_mod")
+stat = &"speed"
+type = 0
+value = -3.0
+source_id = &"slow"
+duration_turns = 2
+
+[resource]
+script = ExtResource("1_effect")
+effect_id = &"slow"
+trigger = 6
+operation = 13
+stat_modifier = SubResource("StatModifier_slow")
+value = 0.0
+stat_type = &""
+proc_chance = 1.0
+conditions = Array[Resource]([])
+stack_rule = 1
+max_stacks = 1
+duration_turns = 2

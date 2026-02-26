@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=3 format=3 uid="uid://wizard_class"]
+
+[ext_resource type="Script" uid="uid://n28pm4g4p03n" path="res://core/data/class_data.gd" id="1_class"]
+[ext_resource type="Resource" uid="uid://fireball_skill" path="res://data/skills/fireball.tres" id="2_skill"]
+
+[resource]
+script = ExtResource("1_class")
+title = "Wizard"
+description = "A master of arcane arts. High intelligence fuels devastating spells, and a magical shield absorbs punishment."
+base_stats = Dictionary[StringName, int]({
+&"strength": 4,
+&"intelligence": 14,
+&"defense": 4,
+&"max_hp": 80,
+&"hp": 80,
+&"speed": 6,
+&"max_shield": 30,
+&"shield": 30,
+&"crit_chance": 5
+})
+starting_skills = Array[Resource]([ExtResource("2_skill")])
+starting_passives = Array[StringName]([&"hard_shield"])

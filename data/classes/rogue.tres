@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=3 format=3 uid="uid://rogue_class"]
+
+[ext_resource type="Script" uid="uid://n28pm4g4p03n" path="res://core/data/class_data.gd" id="1_class"]
+[ext_resource type="Resource" uid="uid://quick_slash_skill" path="res://data/skills/quick_slash.tres" id="2_skill"]
+
+[resource]
+script = ExtResource("1_class")
+title = "Rogue"
+description = "A swift and deadly shadow. High dexterity grants critical strikes and evasion. Fragile but lethal."
+base_stats = Dictionary[StringName, int]({
+&"strength": 6,
+&"dexterity": 14,
+&"defense": 4,
+&"max_hp": 85,
+&"hp": 85,
+&"speed": 10,
+&"crit_chance": 15,
+&"crit_damage": 200,
+&"avoid_chance": 10
+})
+starting_skills = Array[Resource]([ExtResource("2_skill")])
+starting_passives = Array[StringName]([&"technique"])
