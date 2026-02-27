@@ -64,10 +64,8 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 		# Apply on_cast effects
 		for effect in skill.on_cast_effects:
 			source.effects.apply_effect(effect)
-		# Update damage_dealt event so UI refreshes
-		GlobalEventBus.dispatch("damage_dealt", {
-			"source": source, "target": source,
-			"damage": 0, "is_crit": false
+		GlobalEventBus.dispatch("heal_applied", {
+			"source": source, "target": source, "amount": heal_amount
 		})
 		return
 
@@ -80,7 +78,7 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 		GlobalEventBus.dispatch("combat_log", {
 			"message": "[color=cyan]AVOIDED![/color] %s dodged %s's %s" % [target.name, source.name, skill.skill_name]
 		})
-		# Fire avoid event for passives
+		GlobalEventBus.dispatch("avoid_success", {"entity": target, "attacker": source})
 		target.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_RECEIVED_CALC, context)
 		return
 
@@ -90,6 +88,7 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 		GlobalEventBus.dispatch("combat_log", {
 			"message": "[color=yellow]MISS![/color] %s's %s missed %s" % [source.name, skill.skill_name, target.name]
 		})
+		GlobalEventBus.dispatch("skill_miss", {"source": source, "target": target})
 		return
 
 	# 4. Parry Check — target deflects the attack

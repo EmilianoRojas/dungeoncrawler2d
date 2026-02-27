@@ -14,6 +14,10 @@ func add_action(action: Action) -> void:
 		return a.speed > b.speed
 	)
 
+func peek_next() -> Action:
+	if queue.is_empty(): return null
+	return queue[0]
+
 func has_actions() -> bool:
 	return not queue.is_empty()
 

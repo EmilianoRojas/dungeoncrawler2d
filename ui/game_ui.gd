@@ -38,6 +38,8 @@ var room_selector: RoomSelector
 const SKILL_BTN_SCENE = preload("res://ui/components/skill_button.tscn")
 const SKILL_DRAFT_SCENE = preload("res://ui/components/skill_draft_panel.tscn")
 
+var vfx_manager: VFXManager
+
 var active_draft: SkillDraftPanel = null
 var _camp_menu_wrapper: CenterContainer = null
 var _loot_panel: LootPanel = null
@@ -52,13 +54,18 @@ func _ready() -> void:
 	add_child(room_selector)
 	room_selector.visible = false
 	room_selector.room_selected.connect(_on_room_selected)
-	
+
+	# VFX Manager
+	vfx_manager = VFXManager.new()
+	add_child(vfx_manager)
+	vfx_manager.setup(self)
+
 	# Style shield bars
 	player_shield.set_as_shield()
 	enemy_shield.set_as_shield()
-	
+
 	add_log("Welcome to Dungeon Crawler 2D!")
-	
+
 	# Add persistent Stats button to top bar
 	_stats_button = Button.new()
 	_stats_button.text = "📊 Stats"
@@ -107,7 +114,7 @@ func initialize_battle(player: Entity, enemies: Array[Entity]) -> void:
 		player_sprite.visible = true
 	else:
 		player_sprite.visible = false
-		
+
 	if enemies.size() > 0:
 		update_hp(enemies[0], false)
 		enemy_label.text = enemies[0].name
@@ -120,22 +127,32 @@ func initialize_battle(player: Entity, enemies: Array[Entity]) -> void:
 		enemy_hp.visible = false
 		enemy_shield.visible = false
 		enemy_sprite.visible = false
-	
+
+	# Reset sprite modulates from previous battles
+	player_sprite.modulate = Color.WHITE
+	enemy_sprite.modulate = Color.WHITE
+
+	# Register entities with VFXManager (clear old entries first)
+	vfx_manager.clear_entities()
+	vfx_manager.register_entity(player, player_sprite, $BattleContainer/PlayerInfo)
+	if enemies.size() > 0:
+		vfx_manager.register_entity(enemies[0], enemy_sprite, $BattleContainer/EnemyInfo)
+
 	_populate_skills(player)
 
 func update_hp(entity: Entity, is_player: bool) -> void:
 	if not entity.stats: return
-	
+
 	var current_hp = entity.stats.get_current(StatTypes.HP)
 	var max_hp = entity.stats.get_stat(StatTypes.MAX_HP)
 	var current_shield = entity.stats.get_current(StatTypes.SHIELD)
 	var max_shield = entity.stats.get_stat(StatTypes.MAX_SHIELD)
-	
+
 	if is_player:
-		player_hp.update_health(current_hp, max_hp)
+		player_hp.update_health_animated(current_hp, max_hp)
 		_update_shield_bar(player_shield, current_shield, max_shield)
 	else:
-		enemy_hp.update_health(current_hp, max_hp)
+		enemy_hp.update_health_animated(current_hp, max_hp)
 		_update_shield_bar(enemy_shield, current_shield, max_shield)
 
 func _update_shield_bar(bar: HPBar, current: int, max_val: int) -> void:
@@ -143,7 +160,7 @@ func _update_shield_bar(bar: HPBar, current: int, max_val: int) -> void:
 		bar.visible = false
 	else:
 		bar.visible = true
-		bar.update_health(current, max_val)
+		bar.update_health_animated(current, max_val)
 
 # --- Skills ---
 

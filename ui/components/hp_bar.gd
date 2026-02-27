@@ -14,6 +14,18 @@ func update_health(current: int, max_val: int) -> void:
 		else:
 			label.text = "%d / %d" % [current, max_val]
 
+func update_health_animated(current: int, max_val: int, duration: float = 0.3) -> void:
+	max_value = max_val
+	var tween = create_tween()
+	tween.tween_property(self, "value", float(current), duration)
+	tween.tween_callback(func():
+		if label:
+			if is_shield:
+				label.text = "🛡 %d / %d" % [current, max_val]
+			else:
+				label.text = "%d / %d" % [current, max_val]
+	)
+
 func set_as_shield() -> void:
 	is_shield = true
 	# Visual distinction for shield bars

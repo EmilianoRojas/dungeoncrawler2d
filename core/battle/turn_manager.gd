@@ -18,6 +18,7 @@ var current_phase: Phase = Phase.WAITING
 var entities: Array[Entity] = []
 var action_queue: ActionQueue
 var turn_count: int = 0
+var vfx_manager = null  # set by GameLoop after battle setup
 
 func _init() -> void:
 	action_queue = ActionQueue.new()
@@ -158,10 +159,17 @@ func _process_resolution_phase() -> void:
 		# Execution continues unless game ending state is reached by event
 		if current_phase == Phase.WIN or current_phase == Phase.LOSS:
 			break
-			
+
 		# Visual Wait
 		await get_tree().create_timer(0.5).timeout
-		
+
+		# VFX: cast animation + impact delay
+		if vfx_manager:
+			var next_action = action_queue.peek_next()
+			var delay = vfx_manager.play_cast_vfx(next_action)
+			if delay > 0.0:
+				await get_tree().create_timer(delay).timeout
+
 		# Execute next
 		action_queue.process_next()
 	

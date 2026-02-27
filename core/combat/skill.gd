@@ -28,3 +28,7 @@ enum ScalingType {
 
 # Progression
 @export var skill_level: int = 1 # Increases via Skill Draft upgrade (+10% damage per level)
+
+# VFX
+@export var impact_delay: float = 0.25  # seconds before damage applies
+@export var vfx_color: Color = Color.WHITE  # cast animation tint

@@ -30,8 +30,14 @@ var passive_resolver: PassiveResolver
 
 func _exit_tree() -> void:
 	# Ensure we clean up listeners when scene changes or game quits
-	GlobalEventBus.unsubscribe("damage_dealt", _on_damage_event)
 	GlobalEventBus.unsubscribe("combat_log", _on_combat_log)
+	if game_ui and game_ui.vfx_manager:
+		GlobalEventBus.unsubscribe("damage_dealt", game_ui.vfx_manager.on_damage_dealt)
+		GlobalEventBus.unsubscribe("entity_died", game_ui.vfx_manager.on_entity_died)
+		GlobalEventBus.unsubscribe("parry_success", game_ui.vfx_manager.on_parry_success)
+		GlobalEventBus.unsubscribe("avoid_success", game_ui.vfx_manager.on_avoid_success)
+		GlobalEventBus.unsubscribe("heal_applied", game_ui.vfx_manager.on_heal_applied)
+		GlobalEventBus.unsubscribe("skill_miss", game_ui.vfx_manager.on_skill_miss)
 
 func _ready() -> void:
 	print("Initializing GameLoop Instance: %d" % get_instance_id())
@@ -88,14 +94,22 @@ func _ready() -> void:
 	
 	turn_manager = TurnManager.new()
 	add_child(turn_manager)
-	
+	turn_manager.vfx_manager = game_ui.vfx_manager
+
 	# 4. Connect Signals
 	turn_manager.turn_processing_end.connect(_on_battle_turn_end)
 	turn_manager.battle_ended.connect(_on_battle_ended)
 	game_ui.skill_draft_choice.connect(_on_skill_draft_choice)
-	GlobalEventBus.subscribe("damage_dealt", _on_damage_event)
 	GlobalEventBus.subscribe("combat_log", _on_combat_log)
-	
+
+	# VFX event subscriptions (VFXManager handles HP updates + visuals)
+	GlobalEventBus.subscribe("damage_dealt", game_ui.vfx_manager.on_damage_dealt)
+	GlobalEventBus.subscribe("entity_died", game_ui.vfx_manager.on_entity_died)
+	GlobalEventBus.subscribe("parry_success", game_ui.vfx_manager.on_parry_success)
+	GlobalEventBus.subscribe("avoid_success", game_ui.vfx_manager.on_avoid_success)
+	GlobalEventBus.subscribe("heal_applied", game_ui.vfx_manager.on_heal_applied)
+	GlobalEventBus.subscribe("skill_miss", game_ui.vfx_manager.on_skill_miss)
+
 	# 5. Initialize Passive Resolver
 	passive_resolver = PassiveResolver.new()
 	add_child(passive_resolver)
@@ -262,13 +276,6 @@ func _on_combat_log(data: Dictionary) -> void:
 	var msg = data.get("message", "")
 	if msg != "":
 		_log(msg)
-
-func _on_damage_event(data: Dictionary) -> void:
-	# Update UI for the target
-	var target = data.get("target")
-	if target:
-		var is_player = (target == player_entity)
-		game_ui.update_hp(target, is_player)
 
 # --- LOOT PROCESSING ---
 

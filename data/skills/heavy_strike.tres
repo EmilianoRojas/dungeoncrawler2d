@@ -13,4 +13,6 @@ on_hit_effects = Array[Resource]([])
 base_power = 10
 max_cooldown = 2
 hit_chance = 70
+impact_delay = 0.3
+vfx_color = Color(1, 0.45, 0.1, 1)
 

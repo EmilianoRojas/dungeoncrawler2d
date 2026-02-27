@@ -14,3 +14,5 @@ base_power = 0
 max_cooldown = 3
 hit_chance = 100
 is_self_heal = true
+impact_delay = 0.3
+vfx_color = Color(0.4, 1, 0.5, 1)
