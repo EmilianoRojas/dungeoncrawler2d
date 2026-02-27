@@ -81,9 +81,25 @@ static func execute(instance: EffectInstance, owner: Entity, context: CombatCont
 		EffectResource.Operation.DAMAGE_OVER_TIME:
 			if "stats" in owner:
 				var dot_damage = int(value)
+				
+				# DoT bypasses Shield but respects Damage Reduce passive
+				# Check if entity has damage_reduce passive
+				if owner.passives:
+					var dr_passives = owner.passives.get_passives_by_trigger(EffectResource.Trigger.ON_PRE_DAMAGE_APPLY)
+					for p_data in dr_passives:
+						var p_info = p_data.get("passive_info", {}) as Dictionary
+						if p_info.get("logic", "") == "damage_reduce":
+							dot_damage = int(dot_damage * 0.85) # 15% reduction
+				
+				dot_damage = max(1, dot_damage) # At least 1
 				owner.stats.modify_current(StatTypes.HP, -dot_damage)
+				
+				# Color based on effect type
+				var effect_name = instance.resource.effect_id
+				var color = "purple" if effect_name == &"poison" else "orange"
+				var icon = "☠" if effect_name == &"poison" else "🔥"
 				GlobalEventBus.dispatch("combat_log", {
-					"message": "[color=purple]☠ %s takes %d poison damage![/color]" % [owner.name, dot_damage]
+					"message": "[color=%s]%s %s takes %d %s damage![/color]" % [color, icon, owner.name, dot_damage, effect_name]
 				})
 				GlobalEventBus.dispatch("damage_dealt", {
 					"source": null, "target": owner,

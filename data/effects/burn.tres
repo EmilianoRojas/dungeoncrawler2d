@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EffectResource" load_steps=2 format=3 uid="uid://burn_dot_effect"]
+
+[ext_resource type="Script" uid="uid://culub74taadkn" path="res://core/effects/effect_resource.gd" id="1_effect"]
+
+[resource]
+script = ExtResource("1_effect")
+effect_id = &"burn"
+trigger = 10
+operation = 14
+value = 8.0
+stat_type = &""
+proc_chance = 1.0
+conditions = Array[Resource]([])
+stack_rule = 1
+max_stacks = 1
+duration_turns = 2
