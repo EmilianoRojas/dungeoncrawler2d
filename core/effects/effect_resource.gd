@@ -60,7 +60,10 @@ enum Operation {
 	ADD_STAT_MODIFIER,
 
 	# Resources
-	HEAL
+	HEAL,
+	
+	# DoT
+	DAMAGE_OVER_TIME # Deals flat damage to the effect owner each tick (ON_TURN_START)
 }
 
 @export var trigger: Trigger

@@ -75,6 +75,13 @@ func start_new_turn() -> void:
 	# 1. Tick Cooldowns & Effects
 	for e in entities:
 		e.skills.tick_cooldowns()
+		
+		# Dispatch ON_TURN_START effects (DoTs, regen, etc.) BEFORE ticking duration
+		var turn_context = CombatContext.new()
+		turn_context.source = e
+		turn_context.target = e
+		e.effects.dispatch(EffectResource.Trigger.ON_TURN_START, turn_context)
+		
 		e.effects.tick_all()
 		if "stats" in e:
 			e.stats.tick_modifiers()

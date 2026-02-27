@@ -75,13 +75,23 @@ static func execute(instance: EffectInstance, owner: Entity, context: CombatCont
 	
 		EffectResource.Operation.HEAL:
 			if "stats" in owner:
-				# Use CombatSystem.heal or direct modify
-				# CombatSystem.heal takes a context with heal_amount
 				context.heal_amount = int(value)
-				print("DEBUG: Executing HEAL operation. Value: %d, Context Amount: %d" % [value, context.heal_amount])
 				CombatSystem.heal(context)
-			else:
-				print("DEBUG: HEAL failed - Owner does not have stats")
+		
+		EffectResource.Operation.DAMAGE_OVER_TIME:
+			if "stats" in owner:
+				var dot_damage = int(value)
+				owner.stats.modify_current(StatTypes.HP, -dot_damage)
+				GlobalEventBus.dispatch("combat_log", {
+					"message": "[color=purple]☠ %s takes %d poison damage![/color]" % [owner.name, dot_damage]
+				})
+				GlobalEventBus.dispatch("damage_dealt", {
+					"source": null, "target": owner,
+					"damage": dot_damage, "is_crit": false
+				})
+				# Death check
+				if owner.stats.get_current(StatTypes.HP) <= 0:
+					GlobalEventBus.dispatch("entity_died", {"entity": owner, "killer": null})
 
 	# 5b. Final Safety Clamp again, just in case
 	context.damage = max(0, context.damage)

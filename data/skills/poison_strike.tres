@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="Skill" load_steps=2 format=3 uid="uid://poison_strike_skill"]
+[gd_resource type="Resource" script_class="Skill" load_steps=3 format=3 uid="uid://poison_strike_skill"]
 
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
+[ext_resource type="Resource" uid="uid://poison_dot_effect" path="res://data/effects/poison.tres" id="2_effect"]
 
 [resource]
 script = ExtResource("1_skill")
@@ -9,7 +10,7 @@ scaling_type = 1
 scaling_stat = &"strength"
 scaling_percent = 0.6
 on_cast_effects = Array[Resource]([])
-on_hit_effects = Array[Resource]([])
+on_hit_effects = Array[Resource]([ExtResource("2_effect")])
 base_power = 4
 max_cooldown = 2
 hit_chance = 90

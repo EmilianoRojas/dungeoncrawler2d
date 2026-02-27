@@ -16,4 +16,5 @@ base_stats = {
 "piety": 12
 }
 starting_skills = Array[Resource]([ExtResource("2_skill1")])
+starting_passives = Array[StringName]([&"counter"])
 
