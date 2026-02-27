@@ -133,9 +133,12 @@ func submit_player_action(action: Action) -> void:
 	if current_phase != Phase.DECISION:
 		print("Warning: Player submitted action outside DECISION phase")
 		return
-		
-	print("Player submitted: %s" % action)
-	action_queue.add_action(action)
+	
+	if action:
+		print("Player submitted: %s" % action)
+		action_queue.add_action(action)
+	else:
+		print("Player is waiting (no action)")
 	
 	_set_phase(Phase.RESOLUTION)
 	_process_resolution_phase()

@@ -42,6 +42,7 @@ func _ready() -> void:
 	add_child(game_ui)
 	game_ui.command_submitted.connect(handle_input)
 	game_ui.skill_activated.connect(_on_ui_skill_activated)
+	game_ui.wait_turn_pressed.connect(_on_wait_turn)
 	game_ui.room_selected.connect(_on_room_selected)
 	game_ui.camp_action_chosen.connect(_on_camp_action)
 	game_ui.loot_decision.connect(_on_loot_decision)
@@ -139,6 +140,12 @@ func _on_ui_skill_activated(skill: Skill) -> void:
 		game_ui.update_skill_cooldowns(player_entity)
 		turn_manager.submit_player_action(action)
 
+func _on_wait_turn() -> void:
+	if current_state != State.COMBAT: return
+	_log("⏳ Waiting... (all skills on cooldown)")
+	# Submit a null action — turn manager will skip player's attack
+	turn_manager.submit_player_action(null)
+
 func _show_room_selection() -> void:
 	current_state = State.ROOM_SELECTION
 	var choices = dungeon_manager.get_next_choices()
@@ -226,7 +233,8 @@ func _start_combat(node: MapNode) -> void:
 	})
 
 func _on_battle_turn_end() -> void:
-	pass
+	# Update skill cooldown display (and wait button visibility) after each turn
+	game_ui.update_skill_cooldowns(player_entity)
 
 func _on_battle_ended(result: TurnManager.Phase) -> void:
 	# Clean up passives from battle

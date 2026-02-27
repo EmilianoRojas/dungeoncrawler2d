@@ -7,6 +7,7 @@ signal room_selected(index: int)
 signal skill_draft_choice(action: String, slot_index: int)
 signal camp_action_chosen(action: String)
 signal loot_decision(equip: bool)
+signal wait_turn_pressed
 
 # Top Bar
 @onready var floor_label: Label = $TopBar/HBoxContainer/FloorLabel
@@ -43,6 +44,7 @@ var _loot_panel: LootPanel = null
 var _char_panel: CharacterPanel = null
 var _stats_button: Button = null
 var _player_ref: Entity = null
+var _wait_button: Button = null
 
 func _ready() -> void:
 	# Initialize Room Selector
@@ -148,6 +150,7 @@ func _update_shield_bar(bar: HPBar, current: int, max_val: int) -> void:
 func _populate_skills(player: Entity) -> void:
 	for child in skill_container.get_children():
 		child.queue_free()
+	_wait_button = null
 	
 	if player.skills:
 		for skill in player.skills.known_skills:
@@ -155,11 +158,20 @@ func _populate_skills(player: Entity) -> void:
 			skill_container.add_child(btn)
 			btn.setup(skill)
 			btn.pressed.connect(func(): _on_skill_pressed(skill))
+	
+	# Add Wait button (hidden by default, shown when all skills on CD)
+	_wait_button = Button.new()
+	_wait_button.text = "⏳ Wait"
+	_wait_button.custom_minimum_size = Vector2(80, 40)
+	_wait_button.visible = false
+	_wait_button.pressed.connect(func(): wait_turn_pressed.emit())
+	skill_container.add_child(_wait_button)
 
 func _on_skill_pressed(skill: Skill) -> void:
 	skill_activated.emit(skill)
 
 func update_skill_cooldowns(player: Entity) -> void:
+	var any_ready = false
 	for child in skill_container.get_children():
 		if child is SkillButton:
 			var btn = child as SkillButton
@@ -167,6 +179,12 @@ func update_skill_cooldowns(player: Entity) -> void:
 			if skill and player.skills:
 				var cd = player.skills.cooldowns.get(skill, 0)
 				btn.update_cooldown(cd)
+				if cd <= 0:
+					any_ready = true
+	
+	# Show/hide wait button
+	if _wait_button:
+		_wait_button.visible = not any_ready
 
 # --- Log ---
 
