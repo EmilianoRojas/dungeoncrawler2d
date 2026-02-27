@@ -112,13 +112,22 @@ func _execute_passive(entity: Entity, logic_key: String, data: Dictionary) -> vo
 
 # --- PASSIVE IMPLEMENTATIONS ---
 
-## Super-strength: Low accuracy skills (hit < 70) deal +30% damage
+## Super-strength: Lower accuracy → higher damage bonus (linear scale)
+## 90%+ hit = 0% bonus, 0% hit = 50% bonus max
+const SUPER_STRENGTH_MAX_BONUS: float = 0.50
+const SUPER_STRENGTH_BASELINE: float = 90.0 # Hit chance at which bonus is 0
+
 func _passive_super_strength(entity: Entity, data: Dictionary) -> void:
 	var skill = data.get("skill") as Skill
-	if skill and skill.hit_chance < 70:
-		var bonus = int(data.get("damage", 0) * 0.30)
+	if not skill or skill.hit_chance >= SUPER_STRENGTH_BASELINE:
+		return
+	
+	var ratio = (SUPER_STRENGTH_BASELINE - skill.hit_chance) / SUPER_STRENGTH_BASELINE
+	var bonus_percent = ratio * SUPER_STRENGTH_MAX_BONUS
+	var bonus = int(data.get("damage", 0) * bonus_percent)
+	if bonus > 0:
 		data["damage"] = data.get("damage", 0) + bonus
-		_log_passive(entity, "Super-strength", "+%d dmg (low accuracy)" % bonus)
+		_log_passive(entity, "Super-strength", "+%d dmg (+%d%%, %d%% hit)" % [bonus, int(bonus_percent * 100), skill.hit_chance])
 
 ## Hard Shield: 30% damage reduce when shield > 0
 func _passive_hard_shield(entity: Entity, data: Dictionary) -> void:
