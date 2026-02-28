@@ -269,7 +269,8 @@ func _on_battle_ended(result: TurnManager.Phase) -> void:
 		_show_game_over_screen()
 
 func _on_room_completed() -> void:
-	# Show next choices
+	# Brief delay before showing next choices so the player can see the result
+	await get_tree().create_timer(2.0).timeout
 	_show_room_selection()
 
 func _on_combat_log(data: Dictionary) -> void:
