@@ -43,7 +43,8 @@ static func _mysterious_fountain() -> EventData:
 	leave.outcome_type = EventChoice.OutcomeType.NOTHING
 	leave.result_text = "You leave the fountain untouched."
 	
-	event.choices = [drink, leave]
+	var _choices: Array[EventChoice] = [drink, leave]
+	event.choices = _choices
 	return event
 
 static func _wandering_merchant() -> EventData:
@@ -79,7 +80,8 @@ static func _wandering_merchant() -> EventData:
 	decline.outcome_type = EventChoice.OutcomeType.NOTHING
 	decline.result_text = "\"Your loss...\" The figure vanishes."
 	
-	event.choices = [trade, trade2, decline]
+	var _choices: Array[EventChoice] = [trade, trade2, decline]
+	event.choices = _choices
 	return event
 
 static func _ancient_altar() -> EventData:
@@ -110,7 +112,8 @@ static func _ancient_altar() -> EventData:
 	ignore.outcome_type = EventChoice.OutcomeType.NOTHING
 	ignore.result_text = "Best not to meddle with dark forces."
 	
-	event.choices = [pray, sacrifice, ignore]
+	var _choices: Array[EventChoice] = [pray, sacrifice, ignore]
+	event.choices = _choices
 	return event
 
 static func _trapped_chest() -> EventData:
@@ -139,7 +142,8 @@ static func _trapped_chest() -> EventData:
 	kick.value = 25.0
 	kick.result_text = "You disarm the trap. A few coins scatter — not much, but it's something."
 	
-	event.choices = [open, kick]
+	var _choices: Array[EventChoice] = [open, kick]
+	event.choices = _choices
 	return event
 
 static func _old_warrior() -> EventData:
@@ -171,7 +175,8 @@ static func _old_warrior() -> EventData:
 	leave.outcome_type = EventChoice.OutcomeType.NOTHING
 	leave.result_text = "You move on. No time for sentiment."
 	
-	event.choices = [help, loot_them, leave]
+	var _choices: Array[EventChoice] = [help, loot_them, leave]
+	event.choices = _choices
 	return event
 
 static func _cursed_shrine() -> EventData:
@@ -200,7 +205,8 @@ static func _cursed_shrine() -> EventData:
 	avoid.outcome_type = EventChoice.OutcomeType.NOTHING
 	avoid.result_text = "Wisdom is knowing when not to gamble."
 	
-	event.choices = [touch, avoid]
+	var _choices: Array[EventChoice] = [touch, avoid]
+	event.choices = _choices
 	return event
 
 static func _abandoned_camp() -> EventData:
@@ -224,7 +230,8 @@ static func _abandoned_camp() -> EventData:
 	search.value = 30.0
 	search.result_text = "You find some notes about dungeon patterns. Useful knowledge."
 	
-	event.choices = [rest, search]
+	var _choices: Array[EventChoice] = [rest, search]
+	event.choices = _choices
 	return event
 
 static func _strange_mushrooms() -> EventData:
@@ -258,5 +265,6 @@ static func _strange_mushrooms() -> EventData:
 	ignore.outcome_type = EventChoice.OutcomeType.NOTHING
 	ignore.result_text = "You walk past. Not everything needs to be touched."
 	
-	event.choices = [eat, collect, ignore]
+	var _choices: Array[EventChoice] = [eat, collect, ignore]
+	event.choices = _choices
 	return event
