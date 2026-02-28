@@ -99,6 +99,7 @@ func _ready() -> void:
 	# 4. Connect Signals
 	turn_manager.turn_processing_end.connect(_on_battle_turn_end)
 	turn_manager.battle_ended.connect(_on_battle_ended)
+	turn_manager.phase_changed.connect(_on_turn_phase_changed)
 	game_ui.skill_draft_choice.connect(_on_skill_draft_choice)
 	GlobalEventBus.subscribe("combat_log", _on_combat_log)
 
@@ -245,6 +246,9 @@ func _start_combat(node: MapNode) -> void:
 		"target": enemy,
 		"enemies": [enemy]
 	})
+
+func _on_turn_phase_changed(new_phase: TurnManager.Phase) -> void:
+	game_ui.set_turn_phase(new_phase)
 
 func _on_battle_turn_end() -> void:
 	# Update skill cooldown display (and wait button visibility) after each turn
