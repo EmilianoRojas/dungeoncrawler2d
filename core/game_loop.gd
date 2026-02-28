@@ -270,7 +270,7 @@ func _on_battle_ended(result: TurnManager.Phase) -> void:
 
 func _on_room_completed() -> void:
 	# Brief delay before showing next choices so the player can see the result
-	await get_tree().create_timer(2.0).timeout
+	await get_tree().create_timer(0.5).timeout
 	_show_room_selection()
 
 func _on_combat_log(data: Dictionary) -> void:
@@ -295,7 +295,7 @@ func _process_combat_loot(is_final_boss: bool = false) -> void:
 	var dungeon_floor = dungeon_manager.current_floor
 	
 	var rewards = LootSystem.generate_enemy_loot(dungeon_floor, is_elite, is_boss)
-	
+	"res://data/skills/backstab.tres"
 	if rewards.is_empty():
 		_log("No loot dropped.")
 		_finish_loot_phase()

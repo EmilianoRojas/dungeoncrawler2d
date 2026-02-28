@@ -1,22 +1,31 @@
-[gd_resource type="Resource" script_class="ClassData" load_steps=3 format=3 uid="uid://rogue_class"]
+[gd_resource type="Resource" script_class="ClassData" load_steps=8 format=3 uid="uid://clm6a4lgtweho"]
 
 [ext_resource type="Script" uid="uid://n28pm4g4p03n" path="res://core/data/class_data.gd" id="1_class"]
-[ext_resource type="Resource" uid="uid://quick_slash_skill" path="res://data/skills/quick_slash.tres" id="2_skill"]
+[ext_resource type="Texture2D" uid="uid://c4l6ffm30s3ou" path="res://data/Ronin.png" id="2_cjm6j"]
+[ext_resource type="Resource" path="res://data/skills/quick_slash.tres" id="2_skill"]
+[ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="3_ewcr0"]
+[ext_resource type="Resource" path="res://data/skills/basic_attack.tres" id="5_umsnw"]
+[ext_resource type="Resource" path="res://data/skills/backstab.tres" id="6_npi5h"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yqwkw"]
+atlas = ExtResource("2_cjm6j")
+region = Rect2(17, 12, 29, 33)
 
 [resource]
 script = ExtResource("1_class")
 title = "Rogue"
 description = "A swift and deadly shadow. High dexterity grants critical strikes and evasion. Fragile but lethal."
 base_stats = Dictionary[StringName, int]({
-&"strength": 6,
-&"dexterity": 14,
-&"defense": 4,
-&"max_hp": 85,
-&"hp": 85,
-&"speed": 10,
+&"avoid_chance": 10,
 &"crit_chance": 15,
 &"crit_damage": 200,
-&"avoid_chance": 10
+&"defense": 4,
+&"dexterity": 14,
+&"hp": 85,
+&"max_hp": 85,
+&"speed": 10,
+&"strength": 6
 })
-starting_skills = Array[Resource]([ExtResource("2_skill")])
+starting_skills = Array[ExtResource("3_ewcr0")]([ExtResource("2_skill"), ExtResource("5_umsnw"), ExtResource("6_npi5h")])
 starting_passives = Array[StringName]([&"technique"])
+sprite = SubResource("AtlasTexture_yqwkw")
