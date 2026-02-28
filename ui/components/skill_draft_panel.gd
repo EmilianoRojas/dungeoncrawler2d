@@ -137,6 +137,17 @@ func _update_display() -> void:
 			btn.pressed.connect(func(): _on_replace(idx))
 			replace_container.add_child(btn)
 	
+	# Reroll button
+	var reroll_cost := CurrencyManager.SKILL_REROLL_COST
+	var can_reroll  := CurrencyManager.has_enough(reroll_cost)
+	var reroll_btn  := Button.new()
+	reroll_btn.text = "🔄 Reroll  (%d 🔷)" % reroll_cost
+	reroll_btn.disabled = not can_reroll
+	if not can_reroll:
+		reroll_btn.tooltip_text = "Not enough Shards"
+	reroll_btn.pressed.connect(func(): _on_reroll())
+	button_container.add_child(reroll_btn)
+
 	# Always show skip
 	var skip_btn = Button.new()
 	skip_btn.text = "✗ Skip"
@@ -154,6 +165,10 @@ func _on_upgrade() -> void:
 func _on_replace(index: int) -> void:
 	draft_completed.emit("replace", index)
 	queue_free()
+
+func _on_reroll() -> void:
+	draft_completed.emit("reroll", -1)
+	# Don't free — GameLoop will replace this panel with a new offer
 
 func _on_skip() -> void:
 	draft_completed.emit("skip", -1)

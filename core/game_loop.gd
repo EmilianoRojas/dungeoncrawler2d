@@ -310,6 +310,15 @@ func _on_battle_ended(result: TurnManager.Phase) -> void:
 		_log("Victory! Proceeding.")
 		# Reset shield after battle (GameSpec §3)
 		player_entity.stats.reset_shield()
+		# Award Shards based on room type
+		var _won_room = dungeon_manager.current_room
+		var _shard_reward := 10
+		if _won_room:
+			match _won_room.type:
+				MapNode.Type.ELITE: _shard_reward = 20
+				MapNode.Type.BOSS:  _shard_reward = 40
+		CurrencyManager.earn(_shard_reward)
+		_log("💰 +%d 🔷 Shards" % _shard_reward)
 		# Check if this was the final boss of the dungeon
 		var is_final_boss = _is_final_boss()
 		# Generate loot from the enemy and show loot UI
@@ -391,7 +400,7 @@ func _process_loot_queue() -> void:
 		current_equipped = player_entity.equipment.equipped_items[slot] as EquipmentResource
 	
 	_log("Found: %s [%s]" % [item.display_name, item.rarity])
-	game_ui.show_loot_panel(item, current_equipped)
+	game_ui.show_loot_panel(item, current_equipped, dungeon_manager.current_floor)
 
 func _on_loot_decision(equip: bool) -> void:
 	if _pending_loot.is_empty():
@@ -487,7 +496,15 @@ func _on_skill_draft_choice(action: String, slot_index: int) -> void:
 	if not _pending_skill_offer:
 		_finish_post_combat()
 		return
-	
+
+	if action == "reroll":
+		if CurrencyManager.spend(CurrencyManager.SKILL_REROLL_COST):
+			_log("🔄 Rerolled skill offer! (-%d 🔷)" % CurrencyManager.SKILL_REROLL_COST)
+			_start_skill_draft()  # Shows a new draft panel with a fresh offer
+		else:
+			_log("Not enough Shards to reroll.")
+		return
+
 	match action:
 		"learn":
 			LevelUpSystem.learn_skill(player_entity, _pending_skill_offer)
@@ -505,7 +522,7 @@ func _on_skill_draft_choice(action: String, slot_index: int) -> void:
 			_log("Replaced %s with %s" % [old_name, _pending_skill_offer.skill_name])
 		"skip":
 			_log("Skipped skill offer.")
-	
+
 	_pending_skill_offer = null
 	_finish_post_combat()
 

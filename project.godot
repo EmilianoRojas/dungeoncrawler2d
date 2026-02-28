@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 GlobalEventBus="*res://core/events/global_event_bus.gd"
 RuneManager="*res://core/systems/rune_manager.gd"
+CurrencyManager="*res://core/systems/currency_manager.gd"
 
 [dotnet]
 

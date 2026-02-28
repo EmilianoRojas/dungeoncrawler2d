@@ -14,10 +14,12 @@ const RARITY_COLORS = {
 
 var _item: EquipmentResource
 var _current_item: EquipmentResource
+var _dungeon_floor: int = 1
 
-func setup(item: EquipmentResource, current_equipped: EquipmentResource = null) -> void:
+func setup(item: EquipmentResource, current_equipped: EquipmentResource = null, dungeon_floor: int = 1) -> void:
 	_item = item
 	_current_item = current_equipped
+	_dungeon_floor = dungeon_floor
 	_build_ui()
 
 func _build_ui() -> void:
@@ -141,15 +143,35 @@ func _build_ui() -> void:
 	
 	var equip_btn = Button.new()
 	equip_btn.text = "✅ Equip"
-	equip_btn.custom_minimum_size = Vector2(140, 42)
+	equip_btn.custom_minimum_size = Vector2(120, 42)
 	equip_btn.pressed.connect(func(): loot_choice.emit(true))
 	btn_row.add_child(equip_btn)
-	
+
+	var reroll_cost := CurrencyManager.EQUIP_REROLL_COST
+	var reroll_btn  := Button.new()
+	reroll_btn.text = "🔄 Reroll\n(%d 🔷)" % reroll_cost
+	reroll_btn.custom_minimum_size = Vector2(100, 42)
+	reroll_btn.disabled = not CurrencyManager.has_enough(reroll_cost)
+	reroll_btn.pressed.connect(_on_reroll)
+	btn_row.add_child(reroll_btn)
+
 	var skip_btn = Button.new()
 	skip_btn.text = "❌ Skip"
-	skip_btn.custom_minimum_size = Vector2(140, 42)
+	skip_btn.custom_minimum_size = Vector2(100, 42)
 	skip_btn.pressed.connect(func(): loot_choice.emit(false))
 	btn_row.add_child(skip_btn)
+
+func _on_reroll() -> void:
+	if not CurrencyManager.spend(CurrencyManager.EQUIP_REROLL_COST):
+		return
+	# Generate a new item of the same slot type
+	var new_item := ItemFactory.generate_random_item(_dungeon_floor, _item.slot)
+	_item = new_item
+	# Rebuild UI in place
+	for child in get_children():
+		child.queue_free()
+	await get_tree().process_frame
+	_build_ui()
 
 func _get_rarity_color() -> Color:
 	return RARITY_COLORS.get(_item.rarity, Color(0.8, 0.8, 0.8))

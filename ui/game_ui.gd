@@ -47,6 +47,7 @@ var _loot_panel: LootPanel = null
 var _char_panel: CharacterPanel = null
 var _stats_button: Button = null
 var _rune_button: Button = null
+var _currency_label: Label = null
 var _player_ref: Entity = null
 var _wait_button: Button = null
 var _rune_panel: RunePanel = null
@@ -86,6 +87,21 @@ func _ready() -> void:
 	_rune_button.custom_minimum_size = Vector2(80, 0)
 	_rune_button.pressed.connect(func(): rune_panel_requested.emit())
 	$TopBar/HBoxContainer.add_child(_rune_button)
+
+	# Currency display
+	_currency_label = Label.new()
+	_currency_label.add_theme_font_size_override("font_size", 13)
+	_currency_label.add_theme_color_override("font_color", Color(0.4, 0.8, 1.0))
+	$TopBar/HBoxContainer.add_child(_currency_label)
+	_refresh_currency_label()
+	CurrencyManager.balance_changed.connect(_on_currency_changed)
+
+func _refresh_currency_label() -> void:
+	if _currency_label:
+		_currency_label.text = "🔷 %d" % CurrencyManager.balance
+
+func _on_currency_changed(_new_balance: int) -> void:
+	_refresh_currency_label()
 
 func _on_room_selected(index: int) -> void:
 	room_selected.emit(index)
@@ -382,12 +398,12 @@ func _close_camp_menu() -> void:
 
 # --- Loot Panel ---
 
-func show_loot_panel(item: EquipmentResource, current_equipped: EquipmentResource = null) -> void:
+func show_loot_panel(item: EquipmentResource, current_equipped: EquipmentResource = null, dungeon_floor: int = 1) -> void:
 	_close_loot_panel()
 	
 	_loot_panel = LootPanel.new()
 	_loot_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_loot_panel.setup(item, current_equipped)
+	_loot_panel.setup(item, current_equipped, dungeon_floor)
 	_loot_panel.loot_choice.connect(_on_loot_choice)
 	add_child(_loot_panel)
 
