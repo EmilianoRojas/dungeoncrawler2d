@@ -52,6 +52,7 @@ func _ready() -> void:
 	game_ui.room_selected.connect(_on_room_selected)
 	game_ui.camp_action_chosen.connect(_on_camp_action)
 	game_ui.loot_decision.connect(_on_loot_decision)
+	game_ui.rune_panel_requested.connect(_on_rune_panel_requested)
 	
 	# 2. Initialize Player
 	player_entity = Entity.new()
@@ -230,7 +231,15 @@ func _start_combat(node: MapNode) -> void:
 	else:
 		enemy = EnemyFactory.create_random_enemy(tier, dungeon_manager.current_floor)
 	_log("Floor %d - %s fight! [%s]" % [dungeon_manager.current_floor, node.get_type_name(), enemy.name])
-	
+
+	# Apply runes to player before battle
+	var _rune_class_title := ""
+	if Engine.has_meta("selected_class"):
+		var _rune_cls := Engine.get_meta("selected_class") as ClassData
+		if _rune_cls:
+			_rune_class_title = _rune_cls.title
+	RuneManager.apply_runes_to_entity(player_entity, _rune_class_title)
+
 	# Register passives for combat
 	passive_resolver.register(player_entity)
 	passive_resolver.register(enemy)
@@ -246,6 +255,43 @@ func _start_combat(node: MapNode) -> void:
 		"target": enemy,
 		"enemies": [enemy]
 	})
+
+func _on_rune_panel_requested() -> void:
+	if current_state != State.ROOM_SELECTION:
+		return
+	var class_title := ""
+	if Engine.has_meta("selected_class"):
+		var cls := Engine.get_meta("selected_class") as ClassData
+		if cls:
+			class_title = cls.title
+	game_ui.show_rune_panel(player_entity, class_title)
+
+func _try_drop_rune() -> void:
+	var roll := randf()
+	var tier: RuneResource.Tier
+	if roll < 0.05:
+		tier = RuneResource.Tier.LEGENDARY
+	elif roll < 0.20:
+		tier = RuneResource.Tier.RARE
+	elif roll < 0.50:
+		tier = RuneResource.Tier.COMMON
+	else:
+		return  # No drop (~50% chance nothing drops)
+
+	# Pick a random rune of that tier that isn't already unlocked
+	var pool := RuneLibrary.get_runes_by_tier(tier)
+	var candidates: Array[RuneResource] = []
+	for rune in pool:
+		if not RuneManager.unlocked_rune_ids.has(rune.id):
+			candidates.append(rune)
+
+	if candidates.is_empty():
+		return  # All runes of this tier already unlocked
+
+	var chosen: RuneResource = candidates[randi() % candidates.size()]
+	RuneManager.unlock_rune(chosen.id)
+	var tier_name := RuneResource.Tier.keys()[tier]
+	_log("✨ Rune found: %s [%s] — Check 💎 Runes to equip it!" % [chosen.display_name, tier_name])
 
 func _on_turn_phase_changed(new_phase: TurnManager.Phase) -> void:
 	game_ui.set_turn_phase(new_phase)
@@ -365,6 +411,9 @@ func _on_loot_decision(equip: bool) -> void:
 
 func _finish_loot_phase() -> void:
 	if _pending_loot_source == "combat":
+		# Chance to drop a rune
+		_try_drop_rune()
+
 		# Award XP after combat loot
 		var current_room = dungeon_manager.current_room
 		var tier = 0

@@ -8,6 +8,7 @@ signal skill_draft_choice(action: String, slot_index: int)
 signal camp_action_chosen(action: String)
 signal loot_decision(equip: bool)
 signal wait_turn_pressed
+signal rune_panel_requested
 
 # Top Bar
 @onready var floor_label: Label = $TopBar/HBoxContainer/FloorLabel
@@ -45,8 +46,10 @@ var _camp_menu_wrapper: CenterContainer = null
 var _loot_panel: LootPanel = null
 var _char_panel: CharacterPanel = null
 var _stats_button: Button = null
+var _rune_button: Button = null
 var _player_ref: Entity = null
 var _wait_button: Button = null
+var _rune_panel: RunePanel = null
 
 # Turn indicator nodes
 var _player_turn_indicator: Control = null
@@ -76,6 +79,13 @@ func _ready() -> void:
 	_stats_button.custom_minimum_size = Vector2(80, 0)
 	_stats_button.pressed.connect(_toggle_character_panel)
 	$TopBar/HBoxContainer.add_child(_stats_button)
+
+	# Add Runes button
+	_rune_button = Button.new()
+	_rune_button.text = "💎 Runes"
+	_rune_button.custom_minimum_size = Vector2(80, 0)
+	_rune_button.pressed.connect(func(): rune_panel_requested.emit())
+	$TopBar/HBoxContainer.add_child(_rune_button)
 
 func _on_room_selected(index: int) -> void:
 	room_selected.emit(index)
@@ -416,3 +426,18 @@ func _close_character_panel() -> void:
 	if _char_panel:
 		_char_panel.queue_free()
 		_char_panel = null
+
+# --- Rune Panel ---
+
+func show_rune_panel(entity: Entity, class_title: String) -> void:
+	_close_rune_panel()
+	_rune_panel = RunePanel.new()
+	_rune_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_rune_panel.setup(entity, class_title)
+	_rune_panel.panel_closed.connect(_close_rune_panel)
+	add_child(_rune_panel)
+
+func _close_rune_panel() -> void:
+	if _rune_panel:
+		_rune_panel.queue_free()
+		_rune_panel = null
