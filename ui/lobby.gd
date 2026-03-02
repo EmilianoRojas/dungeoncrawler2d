@@ -226,6 +226,21 @@ func _build_ui() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	main_vbox.add_child(start_button)
 
+	# Dev shortcut — Battle Test scene
+	var test_btn := Button.new()
+	test_btn.text = "🧪 Battle Test (Dev)"
+	test_btn.custom_minimum_size = Vector2(0, 36)
+	var test_style := StyleBoxFlat.new()
+	test_style.bg_color = Color(0.15, 0.1, 0.25, 0.9)
+	test_style.border_color = Color(0.5, 0.3, 0.8)
+	test_style.set_border_width_all(1)
+	test_style.set_corner_radius_all(5)
+	test_btn.add_theme_stylebox_override("normal", test_style)
+	test_btn.pressed.connect(func():
+		get_tree().change_scene_to_file("res://test/battle_test.tscn")
+	)
+	main_vbox.add_child(test_btn)
+
 func _load_classes() -> void:
 	var dir = DirAccess.open("res://data/classes/")
 	if not dir:
