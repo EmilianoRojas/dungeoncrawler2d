@@ -70,6 +70,12 @@ static func _build() -> void:
 		_r(&"plating_rune",     "Plating Rune",     "+5 Defense (always active)",
 			RuneResource.Tier.RARE, {}, &"plating"),
 
+		# ── RARE (new passives) ──────────────────────────────────────
+		_r(&"momentum_rune",          "Momentum Rune",       "Each consecutive hit adds +5% damage (max +25%). Missing resets the streak.",
+			RuneResource.Tier.RARE, {}, &"momentum"),
+		_r(&"divine_retribution_rune","Divine Retribution",  "When you take damage, deal 30% of it back to the attacker.",
+			RuneResource.Tier.RARE, {}, &"divine_retribution"),
+
 		# ── LEGENDARY ────────────────────────────────────────────────
 		_r(&"colossus",         "Colossus",         "+20 Max HP, +5 Defense",
 			RuneResource.Tier.LEGENDARY, {&"max_hp": 20, &"defense": 5}),
@@ -81,6 +87,12 @@ static func _build() -> void:
 			RuneResource.Tier.LEGENDARY, {}, &"sniping"),
 		_r(&"first_strike_rune","First Strike Rune","50% chance to reduce all CDs by 1 at battle start",
 			RuneResource.Tier.LEGENDARY, {}, &"first_strike"),
+		_r(&"shadow_step_rune", "Shadow Step",      "After dodging, your next attack deals +80% damage and cannot miss.",
+			RuneResource.Tier.LEGENDARY, {}, &"shadow_step"),
+		_r(&"bloodlust_rune",   "Bloodlust",        "Gain +5% Strength per 20% HP missing (up to +25%). The closer to death, the stronger you become.",
+			RuneResource.Tier.LEGENDARY, {}, &"bloodlust"),
+		_r(&"toxin_mastery_rune","Toxin Mastery",   "Poison effects deal +50% damage and apply 1 extra stack on hit.",
+			RuneResource.Tier.LEGENDARY, {}, &"toxin_mastery"),
 	]
 
 static func _r(id: StringName, display_name: String, description: String,
