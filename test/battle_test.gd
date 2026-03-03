@@ -9,11 +9,14 @@ const UI_SCENE := preload("res://ui/game_ui.tscn")
 
 # ── Class data ───────────────────────────────────────────────────────────────
 const CLASSES: Dictionary = {
-	"Warrior": "res://data/classes/warrior.tres",
-	"Wizard":  "res://data/classes/wizard.tres",
-	"Rogue":   "res://data/classes/rogue.tres",
-	"Ranger":  "res://data/classes/ranger.tres",
-	"Cleric":  "res://data/classes/cleric.tres",
+	"Warrior":   "res://data/classes/warrior.tres",
+	"Wizard":    "res://data/classes/wizard.tres",
+	"Rogue":     "res://data/classes/rogue.tres",
+	"Ranger":    "res://data/classes/ranger.tres",
+	"Cleric":    "res://data/classes/cleric.tres",
+	"Berserker": "res://data/classes/berserker.tres",
+	"Shaman":    "res://data/classes/shaman.tres",
+	"Paladin":   "res://data/classes/paladin.tres",
 }
 
 # ── Enemy templates ──────────────────────────────────────────────────────────
