@@ -143,7 +143,7 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 	# 8. Apply Skill Effects (after damage resolves)
 	# Effects on Self (e.g. Buffs, Recoil)
 	for effect in skill.on_cast_effects:
-		source.effects.apply_effect(effect)
-	# Effects on Target (e.g. Debuffs, DoTs)
+		source.effects.apply_effect(effect, source)
+	# Effects on Target (e.g. Debuffs, DoTs) — pass source as caster for DoT scaling
 	for effect in skill.on_hit_effects:
-		target.effects.apply_effect(effect)
+		target.effects.apply_effect(effect, source)

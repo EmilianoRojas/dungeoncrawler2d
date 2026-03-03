@@ -7,27 +7,33 @@ var effects: Array[EffectInstance] = []
 func _init(entity: Entity):
 	owner = entity
 
-func apply_effect(effect_res: EffectResource) -> void:
+## Apply an effect to this entity. Pass caster so DoT ticks can scale off caster stats.
+func apply_effect(effect_res: EffectResource, caster: Entity = null) -> void:
 	var existing = _find_instance(effect_res.effect_id)
 	
 	if existing == null:
-		effects.append(EffectInstance.new(effect_res))
+		effects.append(EffectInstance.new(effect_res, caster))
 		print("Effect %s added." % effect_res.effect_id)
 		return
 	
 	match effect_res.stack_rule:
 		EffectResource.StackRule.ADD:
 			existing.stacks = min(existing.stacks + 1, effect_res.max_stacks)
-			existing.remaining_turns = effect_res.duration_turns # Refresh duration usually implied on add
+			existing.remaining_turns = effect_res.duration_turns
+			# Keep the caster reference from whoever stacked last (most recent wins)
+			if caster:
+				existing.caster = caster
 			print("Effect %s stacked. Count: %d" % [effect_res.effect_id, existing.stacks])
 			
 		EffectResource.StackRule.REFRESH:
 			existing.remaining_turns = effect_res.duration_turns
+			if caster:
+				existing.caster = caster
 			print("Effect %s refreshed." % effect_res.effect_id)
 			
 		EffectResource.StackRule.REPLACE:
 			effects.erase(existing)
-			effects.append(EffectInstance.new(effect_res))
+			effects.append(EffectInstance.new(effect_res, caster))
 			print("Effect %s replaced." % effect_res.effect_id)
 			
 		EffectResource.StackRule.IGNORE:

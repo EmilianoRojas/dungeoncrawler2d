@@ -82,36 +82,30 @@ static func execute(instance: EffectInstance, owner: Entity, context: CombatCont
 			if "stats" in owner:
 				var dot_damage = int(value)
 				
-				# Toxin Mastery: apply per-instance damage multiplier if set (e.g. 1.5 for +50%)
-				if instance.dot_damage_multiplier != 1.0:
-					dot_damage = int(dot_damage * instance.dot_damage_multiplier)
-				
-				# DoT bypasses Shield but respects Damage Reduce passive
-				# Check if entity has damage_reduce passive
-				if owner.passives:
-					var dr_passives = owner.passives.get_passives_by_trigger(EffectResource.Trigger.ON_PRE_DAMAGE_APPLY)
-					for p_data in dr_passives:
+				# Scale off caster stats dynamically — supports toxin_mastery and future DoT passives
+				var caster: Entity = instance.caster
+				if caster and caster.passives:
+					for p_data in caster.passives.active_passives:
 						var p_info = p_data.get("passive_info", {}) as Dictionary
-						if p_info.get("logic", "") == "damage_reduce":
-							dot_damage = int(dot_damage * 0.85) # 15% reduction
+						match p_info.get("logic", ""):
+							"toxin_mastery":
+								if instance.resource.effect_id == &"poison":
+									dot_damage = int(dot_damage * 1.5)
+							# Future DoT-boosting passives can be added here
 				
-				dot_damage = max(1, dot_damage) # At least 1
-				owner.stats.modify_current(StatTypes.HP, -dot_damage)
+				# Route through the damage pipeline so shields, passives, and events all apply
+				var dot_context = CombatContext.new(caster, owner, null)
+				dot_context.damage = max(1, dot_damage)
+				dot_context.is_penetrating = true # DoT bypasses shields by design
 				
-				# Color based on effect type
 				var effect_name = instance.resource.effect_id
 				var color = "purple" if effect_name == &"poison" else "orange"
 				var icon = "☠" if effect_name == &"poison" else "🔥"
 				GlobalEventBus.dispatch("combat_log", {
-					"message": "[color=%s]%s %s takes %d %s damage![/color]" % [color, icon, owner.name, dot_damage, effect_name]
+					"message": "[color=%s]%s %s takes %d %s damage![/color]" % [color, icon, owner.name, dot_context.damage, effect_name]
 				})
-				GlobalEventBus.dispatch("damage_dealt", {
-					"source": null, "target": owner,
-					"damage": dot_damage, "is_crit": false
-				})
-				# Death check
-				if owner.stats.get_current(StatTypes.HP) <= 0:
-					GlobalEventBus.dispatch("entity_died", {"entity": owner, "killer": null})
+				
+				CombatSystem.deal_damage(dot_context)
 
 	# 5b. Final Safety Clamp again, just in case
 	context.damage = max(0, context.damage)

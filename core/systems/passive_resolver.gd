@@ -293,14 +293,14 @@ func _passive_bloodlust(entity: Entity, _data: Dictionary) -> void:
 	entity.stats.add_modifier(mod, &"passive_bloodlust")
 	_log_passive(entity, "Bloodlust", "+%d%% STR (%d stacks, HP %d%%)" % [int(bonus * 100), stacks, int(hp_percent * 100)])
 
-## Toxin Mastery: After confirming a hit with a skill that applies poison, add 1 extra stack.
-## Poison DoT damage bonus is handled via the OperationExecutor stack multiplier.
+## Toxin Mastery: After confirming a hit with a poison skill, apply 1 extra stack.
+## The +50% DoT damage is handled dynamically in OperationExecutor via instance.caster stats.
 func _passive_toxin_mastery(entity: Entity, data: Dictionary) -> void:
 	var target = data.get("target") as Entity
 	var skill = data.get("skill") as Skill
 	if not target or not skill:
 		return
-	# Check if the skill has a poison on_hit_effect
+	# Only trigger if the skill applies poison
 	var has_poison = false
 	for eff in skill.on_hit_effects:
 		if eff is EffectResource and eff.effect_id == &"poison":
@@ -308,15 +308,11 @@ func _passive_toxin_mastery(entity: Entity, data: Dictionary) -> void:
 			break
 	if not has_poison:
 		return
-	# Apply 1 extra poison stack and set dot_damage_multiplier = 1.5 on the instance
+	# Apply 1 extra poison stack — caster is passed so DoT scaling works automatically
 	var poison_res = load("res://data/effects/poison.tres") as EffectResource
 	if poison_res:
-		target.effects.apply_effect(poison_res)
-		# Set multiplier on the existing instance so DoT ticks deal +50%
-		var poison_instance = target.effects._find_instance(&"poison")
-		if poison_instance:
-			poison_instance.dot_damage_multiplier = 1.5
-		_log_passive(entity, "Toxin Mastery", "Extra poison stack on %s (+50%% DoT)" % target.name)
+		target.effects.apply_effect(poison_res, entity)
+		_log_passive(entity, "Toxin Mastery", "Extra poison stack on %s" % target.name)
 
 ## Divine Retribution: When you take damage, deal 30% of it back to the attacker
 func _passive_divine_retribution(entity: Entity, data: Dictionary) -> void:
