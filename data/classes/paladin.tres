@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=6 format=3 uid="uid://paladin_class"]
+
+[ext_resource type="Script" uid="uid://n28pm4g4p03n" path="res://core/data/class_data.gd" id="1_class"]
+[ext_resource type="Texture2D" uid="uid://q2hocdbv5rjc" path="res://data/Knight.png" id="2_sprite"]
+[ext_resource type="Resource" path="res://data/skills/shield_bash.tres" id="3_skill1"]
+[ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="4_skillscript"]
+[ext_resource type="Resource" path="res://data/skills/holy_smite.tres" id="5_skill2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_paladin"]
+atlas = ExtResource("2_sprite")
+region = Rect2(23, 14, 24, 30)
+
+[resource]
+script = ExtResource("1_class")
+title = "Paladin"
+description = "A heavily armored holy warrior with a shield and divine judgment. Slow and tanky, punishes aggression."
+base_stats = Dictionary[StringName, int]({
+&"defense": 14,
+&"hp": 130,
+&"max_hp": 130,
+&"max_shield": 20,
+&"parry_chance": 15,
+&"piety": 9,
+&"shield": 20,
+&"speed": 4,
+&"strength": 9
+})
+starting_skills = Array[ExtResource("4_skillscript")]([ExtResource("3_skill1"), ExtResource("5_skill2")])
+starting_passives = Array[StringName]([&"divine_retribution"])
+sprite = SubResource("AtlasTexture_paladin")

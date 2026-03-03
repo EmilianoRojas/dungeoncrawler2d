@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=6 format=3 uid="uid://shaman_class"]
+
+[ext_resource type="Script" uid="uid://n28pm4g4p03n" path="res://core/data/class_data.gd" id="1_class"]
+[ext_resource type="Texture2D" uid="uid://c4l6ffm30s3ou" path="res://data/Ronin.png" id="2_sprite"]
+[ext_resource type="Resource" path="res://data/skills/poison_strike.tres" id="3_skill1"]
+[ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="4_skillscript"]
+[ext_resource type="Resource" path="res://data/skills/heal.tres" id="5_skill2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_shaman"]
+atlas = ExtResource("2_sprite")
+region = Rect2(17, 12, 29, 33)
+
+[resource]
+script = ExtResource("1_class")
+title = "Shaman"
+description = "A nature mystic who poisons and curses enemies while sustaining through piety and power. Mid-range stats across the board."
+base_stats = Dictionary[StringName, int]({
+&"defense": 5,
+&"hp": 90,
+&"intelligence": 10,
+&"max_hp": 90,
+&"piety": 10,
+&"power": 6,
+&"speed": 6
+})
+starting_skills = Array[ExtResource("4_skillscript")]([ExtResource("3_skill1"), ExtResource("5_skill2")])
+starting_passives = Array[StringName]([&"toxin_mastery"])
+sprite = SubResource("AtlasTexture_shaman")

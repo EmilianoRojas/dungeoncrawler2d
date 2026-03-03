@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=6 format=3 uid="uid://berserker_class"]
+
+[ext_resource type="Script" uid="uid://n28pm4g4p03n" path="res://core/data/class_data.gd" id="1_class"]
+[ext_resource type="Texture2D" uid="uid://q2hocdbv5rjc" path="res://data/Knight.png" id="2_sprite"]
+[ext_resource type="Resource" path="res://data/skills/tornado_slash.tres" id="3_skill1"]
+[ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="4_skillscript"]
+[ext_resource type="Resource" path="res://data/skills/basic_attack.tres" id="5_skill2"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_berserker"]
+atlas = ExtResource("2_sprite")
+region = Rect2(23, 14, 24, 30)
+
+[resource]
+script = ExtResource("1_class")
+title = "Berserker"
+description = "A rage-fueled warrior who trades defense for pure destruction. Gets stronger as HP drops."
+base_stats = Dictionary[StringName, int]({
+&"crit_chance": 10,
+&"crit_damage": 170,
+&"defense": 3,
+&"hp": 110,
+&"max_hp": 110,
+&"speed": 7,
+&"strength": 16
+})
+starting_skills = Array[ExtResource("4_skillscript")]([ExtResource("3_skill1"), ExtResource("5_skill2")])
+starting_passives = Array[StringName]([&"bloodlust"])
+sprite = SubResource("AtlasTexture_berserker")

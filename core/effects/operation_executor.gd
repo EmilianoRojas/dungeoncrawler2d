@@ -82,6 +82,10 @@ static func execute(instance: EffectInstance, owner: Entity, context: CombatCont
 			if "stats" in owner:
 				var dot_damage = int(value)
 				
+				# Toxin Mastery: apply per-instance damage multiplier if set (e.g. 1.5 for +50%)
+				if instance.dot_damage_multiplier != 1.0:
+					dot_damage = int(dot_damage * instance.dot_damage_multiplier)
+				
 				# DoT bypasses Shield but respects Damage Reduce passive
 				# Check if entity has damage_reduce passive
 				if owner.passives:

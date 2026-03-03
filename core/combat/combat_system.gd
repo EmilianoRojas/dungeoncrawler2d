@@ -18,10 +18,28 @@ static func deal_damage(context: CombatContext) -> void:
 	# Target modifies incoming damage (e.g. Shields, Armor, Resistances)
 	target.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_RECEIVED_CALC, context)
 
+	# ===== PASSIVE RESOLVER HOOKS =====
+	# pre_damage_calc — passives can modify context.damage via the data dict
+	var pre_calc_data: Dictionary = {
+		"source": source, "target": target,
+		"damage": context.damage,
+		"skill": context.skill
+	}
+	GlobalEventBus.dispatch("pre_damage_calc", pre_calc_data)
+	context.damage = pre_calc_data.get("damage", context.damage)
+
 	# ===== STAGE 4: FINAL =====
 	# Final adjustments (e.g. Clamp damage, caps, special interactions)
 	if source: source.effects.dispatch(EffectResource.Trigger.ON_PRE_DAMAGE_APPLY, context)
 	target.effects.dispatch(EffectResource.Trigger.ON_PRE_DAMAGE_APPLY, context)
+
+	# pre_damage_apply passive hook
+	var pre_apply_data: Dictionary = {
+		"source": source, "target": target,
+		"damage": context.damage
+	}
+	GlobalEventBus.dispatch("pre_damage_apply", pre_apply_data)
+	context.damage = pre_apply_data.get("damage", context.damage)
 
 	# ===== APPLY DAMAGE (with Shield Absorption) =====
 	var remaining_damage = context.damage
@@ -49,6 +67,13 @@ static func deal_damage(context: CombatContext) -> void:
 	# ===== POST DAMAGE =====
 	if source: source.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_DEALT, context)
 	target.effects.dispatch(EffectResource.Trigger.ON_DAMAGE_TAKEN, context)
+
+	# damage_taken passive hook (divine_retribution, counter, bloodlust update, etc.)
+	GlobalEventBus.dispatch("damage_taken", {
+		"source": source, "target": target,
+		"damage": context.damage,
+		"skill": context.skill
+	})
 
 	# Log/UI events
 	var crit_tag = "[color=red]CRIT![/color] " if context.is_crit else ""

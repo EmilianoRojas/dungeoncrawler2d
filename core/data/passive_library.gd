@@ -105,6 +105,41 @@ static var ALL_PASSIVES: Array[Dictionary] = [
 		"trigger": "battle_start",
 		"logic": "observation"
 	},
+	{
+		"id": &"bloodlust",
+		"name": "Bloodlust",
+		"description": "Gain +5% Strength per 20% HP missing (up to +25%)",
+		"trigger": "damage_taken",
+		"logic": "bloodlust"
+	},
+	{
+		"id": &"toxin_mastery",
+		"name": "Toxin Mastery",
+		"description": "Poison effects deal +50% damage; apply 1 extra poison stack on hit",
+		"trigger": "damage_dealt",
+		"logic": "toxin_mastery"
+	},
+	{
+		"id": &"divine_retribution",
+		"name": "Divine Retribution",
+		"description": "When you take damage, deal 30% of it back to the attacker",
+		"trigger": "damage_taken",
+		"logic": "divine_retribution"
+	},
+	{
+		"id": &"momentum",
+		"name": "Momentum",
+		"description": "Each consecutive hit adds +5% damage (max +25%). Missing resets the streak",
+		"trigger": "damage_dealt",
+		"logic": "momentum"
+	},
+	{
+		"id": &"shadow_step",
+		"name": "Shadow Step",
+		"description": "After dodging, next attack deals +80% damage and cannot miss",
+		"trigger": "avoid_success",
+		"logic": "shadow_step"
+	},
 ]
 
 ## Look up a passive by ID

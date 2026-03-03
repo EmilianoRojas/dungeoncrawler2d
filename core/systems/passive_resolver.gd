@@ -7,6 +7,10 @@ extends Node
 
 var _registered_entities: Array[Entity] = []
 
+# State tracking for stateful passives (keyed by entity instance_id)
+var _momentum_stacks: Dictionary = {}   # int -> int (0-5)
+var _shadow_step_ready: Dictionary = {} # int -> bool
+
 ## Register an entity's passives to listen for events.
 func register(entity: Entity) -> void:
 	if _registered_entities.has(entity):
@@ -20,10 +24,14 @@ func unregister(entity: Entity) -> void:
 ## Unregister all entities.
 func clear() -> void:
 	_registered_entities.clear()
+	_momentum_stacks.clear()
+	_shadow_step_ready.clear()
 
 ## Called by GameLoop on battle_start event.
 func on_battle_start(data: Dictionary) -> void:
 	for entity in _registered_entities:
+		# Reset bloodlust modifier at start of each battle
+		entity.stats.remove_modifiers_from_source(&"passive_bloodlust")
 		_resolve_for_entity(entity, "battle_start", data)
 
 ## Called on damage_dealt event (attacker perspective).
@@ -58,9 +66,17 @@ func on_parry_success(data: Dictionary) -> void:
 
 ## Called on avoid_success event.
 func on_avoid_success(data: Dictionary) -> void:
-	var target = data.get("target") as Entity
+	# Dispatch key is "entity" (the dodger), not "target"
+	var target = data.get("entity") as Entity
 	if target and _registered_entities.has(target):
 		_resolve_for_entity(target, "avoid_success", data)
+
+## Called on skill_miss event (attacker missed).
+func on_skill_miss(data: Dictionary) -> void:
+	var source = data.get("source") as Entity
+	if source and _registered_entities.has(source):
+		_resolve_momentum_reset(source)
+		_resolve_for_entity(source, "skill_miss", data)
 
 func _resolve_for_entity(entity: Entity, trigger: String, data: Dictionary) -> void:
 	if not entity.passives:
@@ -109,6 +125,16 @@ func _execute_passive(entity: Entity, logic_key: String, data: Dictionary) -> vo
 			_passive_observation(data)
 		"supply_route":
 			pass # Handled outside combat
+		"bloodlust":
+			_passive_bloodlust(entity, data)
+		"toxin_mastery":
+			_passive_toxin_mastery(entity, data)
+		"divine_retribution":
+			_passive_divine_retribution(entity, data)
+		"momentum":
+			_passive_momentum(entity, data)
+		"shadow_step":
+			_passive_shadow_step(entity)
 
 # --- PASSIVE IMPLEMENTATIONS ---
 
@@ -244,6 +270,108 @@ func _log_passive(entity: Entity, passive_name: String, detail: String) -> void:
 		"message": "[%s] %s: %s" % [entity.name, passive_name, detail]
 	})
 
+## Bloodlust: +5% STR per 20% HP missing (up to +25%)
+## Trigger: pre_damage_calc (and battle_start for initial state)
+func _passive_bloodlust(entity: Entity, _data: Dictionary) -> void:
+	# Remove old modifier so we recalculate fresh each trigger
+	entity.stats.remove_modifiers_from_source(&"passive_bloodlust")
+	var hp = entity.stats.get_current(StatTypes.HP)
+	var max_hp = entity.stats.get_stat(StatTypes.MAX_HP)
+	if max_hp <= 0:
+		return
+	var hp_percent = float(hp) / float(max_hp)
+	var missing_percent = 1.0 - hp_percent
+	# Each 20% HP missing = +5% STR, capped at 5 stacks (+25%)
+	var stacks = mini(int(missing_percent / 0.20), 5)
+	if stacks <= 0:
+		return
+	var bonus = stacks * 0.05 # +5% per stack
+	var mod = StatModifier.new()
+	mod.stat = StatTypes.STRENGTH
+	mod.type = StatModifier.Type.PERCENT_ADD
+	mod.value = bonus
+	entity.stats.add_modifier(mod, &"passive_bloodlust")
+	_log_passive(entity, "Bloodlust", "+%d%% STR (%d stacks, HP %d%%)" % [int(bonus * 100), stacks, int(hp_percent * 100)])
+
+## Toxin Mastery: After confirming a hit with a skill that applies poison, add 1 extra stack.
+## Poison DoT damage bonus is handled via the OperationExecutor stack multiplier.
+func _passive_toxin_mastery(entity: Entity, data: Dictionary) -> void:
+	var target = data.get("target") as Entity
+	var skill = data.get("skill") as Skill
+	if not target or not skill:
+		return
+	# Check if the skill has a poison on_hit_effect
+	var has_poison = false
+	for eff in skill.on_hit_effects:
+		if eff is EffectResource and eff.effect_id == &"poison":
+			has_poison = true
+			break
+	if not has_poison:
+		return
+	# Apply 1 extra poison stack and set dot_damage_multiplier = 1.5 on the instance
+	var poison_res = load("res://data/effects/poison.tres") as EffectResource
+	if poison_res:
+		target.effects.apply_effect(poison_res)
+		# Set multiplier on the existing instance so DoT ticks deal +50%
+		var poison_instance = target.effects._find_instance(&"poison")
+		if poison_instance:
+			poison_instance.dot_damage_multiplier = 1.5
+		_log_passive(entity, "Toxin Mastery", "Extra poison stack on %s (+50%% DoT)" % target.name)
+
+## Divine Retribution: When you take damage, deal 30% of it back to the attacker
+func _passive_divine_retribution(entity: Entity, data: Dictionary) -> void:
+	var source = data.get("source") as Entity
+	if not source or source == entity:
+		return
+	var incoming = data.get("damage", 0)
+	if incoming <= 0:
+		return
+	var retaliation = max(1, int(incoming * 0.30))
+	# Apply retaliation directly (bypass pipeline to avoid infinite loops)
+	source.stats.modify_current(StatTypes.HP, -retaliation)
+	_log_passive(entity, "Divine Retribution", "%d reflected to %s" % [retaliation, source.name])
+	GlobalEventBus.dispatch("combat_log", {
+		"message": "[color=gold]⚔ Divine Retribution[/color]: %s reflects %d to %s" % [entity.name, retaliation, source.name]
+	})
+
+## Momentum: Each consecutive hit adds +5% damage (max 5 stacks = +25%). Miss resets.
+func _passive_momentum(entity: Entity, data: Dictionary) -> void:
+	var id = entity.get_instance_id()
+	var stacks = _momentum_stacks.get(id, 0)
+	stacks = mini(stacks + 1, 5)
+	_momentum_stacks[id] = stacks
+	if stacks <= 0:
+		return
+	var bonus = int(data.get("damage", 0) * (stacks * 0.05))
+	data["damage"] = data.get("damage", 0) + bonus
+	_log_passive(entity, "Momentum", "+%d dmg (stack %d/5)" % [bonus, stacks])
+
+## Called on skill_miss to reset momentum streak
+func _resolve_momentum_reset(entity: Entity) -> void:
+	var id = entity.get_instance_id()
+	if _momentum_stacks.get(id, 0) > 0:
+		_momentum_stacks[id] = 0
+		_log_passive(entity, "Momentum", "Streak broken — reset to 0")
+
+## Shadow Step: After dodging, next attack deals +80% damage and cannot miss
+func _passive_shadow_step(entity: Entity) -> void:
+	var id = entity.get_instance_id()
+	_shadow_step_ready[id] = true
+	_log_passive(entity, "Shadow Step", "Dodge! Next attack: +80% dmg, guaranteed hit")
+
+## Called by SkillExecutor (pre_damage_calc) to consume Shadow Step buff if ready.
+## Returns true if the buff was consumed (caller should set 100% hit and boost damage).
+func consume_shadow_step(entity: Entity, data: Dictionary) -> bool:
+	var id = entity.get_instance_id()
+	if not _shadow_step_ready.get(id, false):
+		return false
+	_shadow_step_ready[id] = false
+	var bonus = int(data.get("damage", 0) * 0.80)
+	data["damage"] = data.get("damage", 0) + bonus
+	data["force_hit"] = true
+	_log_passive(entity, "Shadow Step", "+%d dmg (guaranteed hit consumed)" % bonus)
+	return true
+
 ## Clean up modifiers added by passives (called on battle end).
 func cleanup_battle_modifiers(entity: Entity) -> void:
 	entity.stats.remove_modifiers_from_source(&"passive_plating")
@@ -252,3 +380,7 @@ func cleanup_battle_modifiers(entity: Entity) -> void:
 	entity.stats.remove_modifiers_from_source(&"passive_swordmanship")
 	entity.stats.remove_modifiers_from_source(&"passive_avoid_critical")
 	entity.stats.remove_modifiers_from_source(&"passive_weaken")
+	entity.stats.remove_modifiers_from_source(&"passive_bloodlust")
+	var id = entity.get_instance_id()
+	_momentum_stacks.erase(id)
+	_shadow_step_ready.erase(id)
