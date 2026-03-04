@@ -1,4 +1,3 @@
-class_name CurrencyManager
 extends Node
 
 const SAVE_PATH: String = "user://currency_save.json"

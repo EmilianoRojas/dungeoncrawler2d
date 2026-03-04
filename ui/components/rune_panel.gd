@@ -199,8 +199,8 @@ func _refresh() -> void:
 
 func _make_rune_button(rune: RuneResource, is_equipped: bool) -> Button:
 	var cost       := RuneLibrary.get_cost(rune.tier)
-	var tier_color := TIER_COLORS[rune.tier]
-	var tier_tag   := TIER_LABELS[rune.tier]
+	var tier_color: Color  = TIER_COLORS[rune.tier]
+	var tier_tag:   String = TIER_LABELS[rune.tier]
 	var affordable := is_equipped or RuneManager.can_equip(_class_title, rune.id)
 
 	var btn := Button.new()

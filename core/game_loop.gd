@@ -290,7 +290,7 @@ func _try_drop_rune() -> void:
 
 	var chosen: RuneResource = candidates[randi() % candidates.size()]
 	RuneManager.unlock_rune(chosen.id)
-	var tier_name := RuneResource.Tier.keys()[tier]
+	var tier_name: String = RuneResource.Tier.keys()[tier]
 	_log("✨ Rune found: %s [%s] — Check 💎 Runes to equip it!" % [chosen.display_name, tier_name])
 
 func _on_turn_phase_changed(new_phase: TurnManager.Phase) -> void:

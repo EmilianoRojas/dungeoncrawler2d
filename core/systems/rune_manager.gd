@@ -1,4 +1,3 @@
-class_name RuneManager
 extends Node
 
 const MAX_COST: int = 20
@@ -22,8 +21,9 @@ func unlock_rune(id: StringName) -> void:
 
 func get_equipped(class_title: String) -> Array[StringName]:
 	if not equipped_runes.has(class_title):
-		equipped_runes[class_title] = []
-	return equipped_runes[class_title]
+		equipped_runes[class_title] = [] as Array[StringName]
+	var result: Array[StringName] = equipped_runes[class_title]
+	return result
 
 func get_used_cost(class_title: String) -> int:
 	var total: int = 0
