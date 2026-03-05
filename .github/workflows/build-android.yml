@@ -9,6 +9,8 @@ jobs:
   export-android:
     name: Android Export
     runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.4
 
     steps:
       - name: Checkout
@@ -16,76 +18,28 @@ jobs:
         with:
           lfs: true
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android NDK
-        run: sdkmanager "ndk;25.2.9519653"
-
-      - name: Download Godot 4.4
+      - name: Setup export templates
         run: |
-          wget -q https://github.com/godotengine/godot/releases/download/4.4-stable/Godot_v4.4-stable_linux.x86_64.zip -O godot.zip
-          unzip -q godot.zip
-          chmod +x Godot_v4.4-stable_linux.x86_64
-          sudo mv Godot_v4.4-stable_linux.x86_64 /usr/local/bin/godot
-
-      - name: Download Godot export templates
-        run: |
-          mkdir -p ~/.local/share/godot/export_templates/4.4.stable
-          wget -q https://github.com/godotengine/godot/releases/download/4.4-stable/Godot_v4.4-stable_export_templates.tpz -O templates.tpz
-          unzip -q templates.tpz -d templates_raw
-          mv templates_raw/templates/* ~/.local/share/godot/export_templates/4.4.stable/
-          rm -rf templates_raw templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/
+          mv /root/.local/share/godot/export_templates/4.4.stable ~/.local/share/godot/export_templates/4.4.stable
 
       - name: Generate debug keystore
         run: |
           keytool -genkey -v \
-            -keystore ${{ github.workspace }}/debug.keystore \
+            -keystore /root/debug.keystore \
             -storepass android -alias androiddebugkey -keypass android \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Import project and patch editor settings
-        run: |
-          cd ${{ github.workspace }}
-          # Let Godot generate its own settings file
-          timeout 60 godot --headless --import --quit-after 100 || true
-          # Show what settings file was created and where
-          echo "--- Settings files found ---"
-          find ~/.config/godot -name "*.tres" 2>/dev/null
-          SETTINGS_FILE=$(find ~/.config/godot -name "editor_settings-4*.tres" | head -1)
-          echo "--- Patching: $SETTINGS_FILE ---"
-          cat "$SETTINGS_FILE"
-          # Inject Android SDK paths (append if not present, replace if present)
-          sed -i '/export\/android\/java_sdk_path/d' "$SETTINGS_FILE"
-          sed -i '/export\/android\/android_sdk_path/d' "$SETTINGS_FILE"
-          sed -i '/export\/android\/debug_keystore/d' "$SETTINGS_FILE"
-          # Append before the last line (before closing of [resource])
-          sed -i "$ a export/android/java_sdk_path = \"$JAVA_HOME\"" "$SETTINGS_FILE"
-          sed -i "$ a export/android/android_sdk_path = \"$ANDROID_SDK_ROOT\"" "$SETTINGS_FILE"
-          sed -i "$ a export/android/debug_keystore = \"${{ github.workspace }}/debug.keystore\"" "$SETTINGS_FILE"
-          sed -i "$ a export/android/debug_keystore_pass = \"android\"" "$SETTINGS_FILE"
-          sed -i "$ a export/android/debug_keystore_user = \"androiddebugkey\"" "$SETTINGS_FILE"
-          echo "--- Patched settings ---"
-          cat "$SETTINGS_FILE"
-
       - name: Export APK
         run: |
-          mkdir -p ${{ github.workspace }}/builds
-          cd ${{ github.workspace }}
+          mkdir -p builds
           godot --headless --export-debug "Android" builds/dungeoncrawler.apk 2>&1
-          echo "--- Build result ---"
-          ls -lh builds/ || echo "No files in builds/"
+          ls -lh builds/
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: dungeoncrawler-android-debug
-          path: ${{ github.workspace }}/builds/dungeoncrawler.apk
+          path: builds/dungeoncrawler.apk
           if-no-files-found: error
