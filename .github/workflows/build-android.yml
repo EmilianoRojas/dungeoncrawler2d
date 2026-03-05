@@ -32,9 +32,13 @@ jobs:
           echo "--- Preset keystore ---"
           grep keystore export_presets.cfg
 
-      - name: Install matching Android build tools
+      - name: Install matching Android build tools and platform
         run: |
-          yes | /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" 2>&1 | tail -3
+          echo "=== Current platforms ==="
+          ls /usr/lib/android-sdk/platforms/ 2>/dev/null || echo "none"
+          yes | /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34" 2>&1 | tail -5
+          echo "=== After install ==="
+          ls /usr/lib/android-sdk/platforms/
           ls /usr/lib/android-sdk/build-tools/
 
       - name: Find Java and Android paths
