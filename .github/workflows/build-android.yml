@@ -98,7 +98,7 @@ jobs:
           find "$ANDROID_SDK_ROOT/build-tools" -name aapt2 2>/dev/null || echo "aapt2 not found"
           echo "=== Running export ==="
           mkdir -p builds
-          godot --headless --verbose --export-debug "Android" builds/dungeoncrawler.apk 2>&1 | grep -v "not exposed, skipping"
+          godot --headless --verbose --audio-driver Dummy --export-debug "Android" builds/dungeoncrawler.apk  
           echo "--- Build result ---"
           ls -lh builds/
           test -f builds/dungeoncrawler.apk
