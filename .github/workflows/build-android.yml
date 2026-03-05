@@ -18,25 +18,7 @@ jobs:
         with:
           lfs: true
 
-      - name: Setup Godot config and templates for CI home
-        run: |
-          echo "HOME=$HOME"
-          # Copy container's pre-configured editor settings to the actual HOME
-          mkdir -p $HOME/.config/godot
-          cp /root/.config/godot/editor_settings-4.4.tres $HOME/.config/godot/editor_settings-4.4.tres
-          echo "--- Settings copied ---"
-          cat $HOME/.config/godot/editor_settings-4.4.tres
-          # Move templates to HOME so Godot finds them
-          mkdir -p $HOME/.local/share/godot/export_templates/
-          mv /root/.local/share/godot/export_templates/4.4.stable $HOME/.local/share/godot/export_templates/4.4.stable
-          echo "--- Template dir contents (all files) ---"
-          ls -la $HOME/.local/share/godot/export_templates/4.4.stable/
-          echo "--- version.txt ---"
-          cat $HOME/.local/share/godot/export_templates/4.4.stable/version.txt 2>/dev/null || echo "MISSING version.txt — creating it"
-          echo "4.4.stable" > $HOME/.local/share/godot/export_templates/4.4.stable/version.txt
-          cat $HOME/.local/share/godot/export_templates/4.4.stable/version.txt
-
-      - name: Patch preset with container keystore
+      - name: Patch preset keystore
         run: |
           sed -i 's|keystore/debug=""|keystore/debug="/root/debug.keystore"|' export_presets.cfg
           sed -i 's|keystore/debug_user=""|keystore/debug_user="androiddebugkey"|' export_presets.cfg
@@ -47,19 +29,19 @@ jobs:
         run: |
           yes | /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34" 2>&1 | tail -3
 
-      - name: Export APK
+      - name: Export APK (HOME=/root so Godot uses container config directly)
         env:
+          HOME: /root
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
           ANDROID_HOME: /usr/lib/android-sdk
-          ANDROID_NDK_HOME: /usr/lib/android-sdk/ndk/25.2.9519653
         run: |
           mkdir -p builds
-          # Capture output and filter noise, preserving exit code
-          godot --headless --verbose --export-debug "Android" builds/dungeoncrawler.apk 2>&1 | tee /tmp/godot_out.txt | grep -v "not exposed, skipping" || true
-          echo "--- Filtered output (errors/warnings) ---"
-          grep -v "not exposed, skipping" /tmp/godot_out.txt
-          echo "--- Build result ---"
-          ls -lh builds/ 2>/dev/null || echo "builds/ is empty or missing"
+          echo "=== Using HOME=$HOME ==="
+          ls /root/.config/godot/
+          ls /root/.local/share/godot/export_templates/4.4.stable/ | head -5
+          godot --headless --verbose --export-debug "Android" builds/dungeoncrawler.apk 2>&1 | grep -v "not exposed, skipping" | tee /tmp/export_log.txt || true
+          echo "--- Exit check ---"
+          ls -lh builds/ 2>/dev/null || echo "builds/ empty"
           test -f builds/dungeoncrawler.apk
 
       - name: Upload APK
