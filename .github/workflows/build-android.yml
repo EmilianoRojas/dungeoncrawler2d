@@ -38,6 +38,19 @@ jobs:
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
+      - name: Write Godot editor settings
+        run: |
+          mkdir -p /home/runner/.config/godot
+          cat > /home/runner/.config/godot/editor_settings-4.4.tres << EOF
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
+          export/android/debug_keystore = "${{ github.workspace }}/debug.keystore"
+          export/android/debug_keystore_pass = "android"
+          export/android/debug_keystore_user = "androiddebugkey"
+          EOF
+
       - name: Export with Godot
         uses: firebelley/godot-export@v6.0.0
         with:
@@ -45,7 +58,7 @@ jobs:
           godot_export_templates_download_url: https://github.com/godotengine/godot/releases/download/4.4-stable/Godot_v4.4-stable_export_templates.tpz
           relative_project_path: ./
           archive_output: false
-          cache: true
+          cache: false
           export_debug: true
         env:
           GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ github.workspace }}/debug.keystore
