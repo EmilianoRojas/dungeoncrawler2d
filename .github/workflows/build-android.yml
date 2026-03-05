@@ -29,8 +29,12 @@ jobs:
           # Move templates to HOME so Godot finds them
           mkdir -p $HOME/.local/share/godot/export_templates/
           mv /root/.local/share/godot/export_templates/4.4.stable $HOME/.local/share/godot/export_templates/4.4.stable
-          echo "--- Templates ---"
-          ls $HOME/.local/share/godot/export_templates/4.4.stable/ | grep android
+          echo "--- Template dir contents (all files) ---"
+          ls -la $HOME/.local/share/godot/export_templates/4.4.stable/
+          echo "--- version.txt ---"
+          cat $HOME/.local/share/godot/export_templates/4.4.stable/version.txt 2>/dev/null || echo "MISSING version.txt — creating it"
+          echo "4.4.stable" > $HOME/.local/share/godot/export_templates/4.4.stable/version.txt
+          cat $HOME/.local/share/godot/export_templates/4.4.stable/version.txt
 
       - name: Patch preset with container keystore
         run: |
