@@ -34,16 +34,7 @@ jobs:
 
       - name: Export APK
         run: |
-          # Overwrite editor settings right before export in the same step
-          cat > /root/.config/godot/editor_settings-4.4.tres << 'EOF'
-[gd_resource type="EditorSettings" format=3]
-[resource]
-export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"
-export/android/android_sdk_path = "/usr/lib/android-sdk"
-export/android/debug_keystore = "/root/debug.keystore"
-export/android/debug_keystore_user = "androiddebugkey"
-export/android/debug_keystore_pass = "android"
-EOF
+          printf '[gd_resource type="EditorSettings" format=3]\n[resource]\nexport/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"\nexport/android/android_sdk_path = "/usr/lib/android-sdk"\nexport/android/debug_keystore = "/root/debug.keystore"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' > /root/.config/godot/editor_settings-4.4.tres
           mkdir -p builds
           godot --headless --export-debug "Android" builds/dungeoncrawler.apk 2>&1
           ls -lh builds/
