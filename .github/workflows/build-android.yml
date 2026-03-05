@@ -50,10 +50,13 @@ jobs:
           ANDROID_NDK_HOME: /usr/lib/android-sdk/ndk/25.2.9519653
         run: |
           mkdir -p builds
-          # Run with verbose but filter out the noisy "not exposed" lines
-          godot --headless --verbose --export-debug "Android" builds/dungeoncrawler.apk 2>&1 | grep -v "not exposed, skipping"
+          # Capture output and filter noise, preserving exit code
+          godot --headless --verbose --export-debug "Android" builds/dungeoncrawler.apk 2>&1 | tee /tmp/godot_out.txt | grep -v "not exposed, skipping" || true
+          echo "--- Filtered output (errors/warnings) ---"
+          grep -v "not exposed, skipping" /tmp/godot_out.txt
           echo "--- Build result ---"
           ls -lh builds/ 2>/dev/null || echo "builds/ is empty or missing"
+          test -f builds/dungeoncrawler.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
