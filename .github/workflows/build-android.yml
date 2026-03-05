@@ -23,30 +23,13 @@ jobs:
           mkdir -p ~/.local/share/godot/export_templates/
           mv /root/.local/share/godot/export_templates/4.4.stable ~/.local/share/godot/export_templates/4.4.stable
 
-      - name: Patch paths into preset and editor settings
+      - name: Patch preset with known container paths
         run: |
-          # Find keystore and Java in the container
-          KEYSTORE=$(find /root /home -name "debug.keystore" 2>/dev/null | head -1)
-          echo "Keystore: $KEYSTORE"
-          echo "JAVA_HOME: $JAVA_HOME"
-          echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
-
-          # Patch export_presets.cfg with keystore (overrides editor settings requirement)
-          sed -i "s|keystore/debug=\"\"|keystore/debug=\"$KEYSTORE\"|" export_presets.cfg
-          sed -i "s|keystore/debug_user=\"\"|keystore/debug_user=\"androiddebugkey\"|" export_presets.cfg
-          sed -i "s|keystore/debug_password=\"\"|keystore/debug_password=\"android\"|" export_presets.cfg
-
-          # Patch editor settings with Java SDK path
-          SETTINGS=$(find /root/.config/godot -name "editor_settings-4*.tres" 2>/dev/null | head -1)
-          if [ -n "$SETTINGS" ]; then
-            sed -i '/export\/android\/java_sdk_path/d' "$SETTINGS"
-            echo "export/android/java_sdk_path = \"$JAVA_HOME\"" >> "$SETTINGS"
-            echo "export/android/android_sdk_path = \"$ANDROID_SDK_ROOT\"" >> "$SETTINGS"
-            echo "Patched: $SETTINGS"
-            cat "$SETTINGS"
-          fi
-
-          echo "--- Preset keystore lines ---"
+          # These paths are fixed in barichello/godot-ci:4.4
+          sed -i 's|keystore/debug=""|keystore/debug="/root/debug.keystore"|' export_presets.cfg
+          sed -i 's|keystore/debug_user=""|keystore/debug_user="androiddebugkey"|' export_presets.cfg
+          sed -i 's|keystore/debug_password=""|keystore/debug_password="android"|' export_presets.cfg
+          echo "--- Preset keystore ---"
           grep keystore export_presets.cfg
 
       - name: Export APK
