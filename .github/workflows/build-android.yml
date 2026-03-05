@@ -64,7 +64,7 @@ jobs:
           } > /tmp/godot-config/godot/editor_settings-4.4.tres
           cat /tmp/godot-config/godot/editor_settings-4.4.tres
           mkdir -p builds
-          godot --headless --export-debug "Android" builds/dungeoncrawler.apk 2>&1
+          godot --headless --verbose --export-debug "Android" builds/dungeoncrawler.apk 2>&1
           ls -lh builds/
 
       - name: Upload APK
