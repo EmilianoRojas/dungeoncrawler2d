@@ -28,20 +28,33 @@ jobs:
       - name: Install Android NDK
         run: sdkmanager "ndk;25.2.9519653"
 
+      - name: Download Godot 4.4
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.4-stable/Godot_v4.4-stable_linux.x86_64.zip -O godot.zip
+          unzip -q godot.zip
+          chmod +x Godot_v4.4-stable_linux.x86_64
+          sudo mv Godot_v4.4-stable_linux.x86_64 /usr/local/bin/godot
+
+      - name: Download Godot export templates
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates/4.4.stable
+          wget -q https://github.com/godotengine/godot/releases/download/4.4-stable/Godot_v4.4-stable_export_templates.tpz -O templates.tpz
+          unzip -q templates.tpz -d templates_raw
+          mv templates_raw/templates/* ~/.local/share/godot/export_templates/4.4.stable/
+          rm -rf templates_raw templates.tpz
+
       - name: Generate debug keystore
         run: |
           keytool -genkey -v \
             -keystore ${{ github.workspace }}/debug.keystore \
-            -storepass android \
-            -alias androiddebugkey \
-            -keypass android \
+            -storepass android -alias androiddebugkey -keypass android \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Write Godot editor settings
         run: |
-          mkdir -p /home/runner/.config/godot
-          cat > /home/runner/.config/godot/editor_settings-4.4.tres << EOF
+          mkdir -p ~/.config/godot
+          cat > ~/.config/godot/editor_settings-4.4.tres << EOF
           [gd_resource type="EditorSettings" format=3]
           [resource]
           export/android/java_sdk_path = "$JAVA_HOME"
@@ -50,24 +63,25 @@ jobs:
           export/android/debug_keystore_pass = "android"
           export/android/debug_keystore_user = "androiddebugkey"
           EOF
+          echo "--- Editor settings ---"
+          cat ~/.config/godot/editor_settings-4.4.tres
 
-      - name: Export with Godot
-        uses: firebelley/godot-export@v6.0.0
-        with:
-          godot_executable_download_url: https://github.com/godotengine/godot/releases/download/4.4-stable/Godot_v4.4-stable_linux.x86_64.zip
-          godot_export_templates_download_url: https://github.com/godotengine/godot/releases/download/4.4-stable/Godot_v4.4-stable_export_templates.tpz
-          relative_project_path: ./
-          archive_output: false
-          cache: false
-          export_debug: true
-        env:
-          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ github.workspace }}/debug.keystore
-          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
-          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+      - name: Import project
+        run: |
+          cd ${{ github.workspace }}
+          timeout 60 godot --headless --import --quit-after 100 || true
 
-      - name: Upload APK artifact
+      - name: Export APK
+        run: |
+          mkdir -p ${{ github.workspace }}/builds
+          cd ${{ github.workspace }}
+          godot --headless --export-debug "Android" builds/dungeoncrawler.apk 2>&1
+          echo "--- Build result ---"
+          ls -lh builds/ || echo "No files in builds/"
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: dungeoncrawler-android-debug
-          path: /home/runner/.local/share/godot/exports/Android/
+          path: ${{ github.workspace }}/builds/dungeoncrawler.apk
           if-no-files-found: error
