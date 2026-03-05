@@ -51,25 +51,19 @@ jobs:
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Write Godot editor settings
-        run: |
-          mkdir -p ~/.config/godot
-          cat > ~/.config/godot/editor_settings-4.4.tres << EOF
-          [gd_resource type="EditorSettings" format=3]
-          [resource]
-          export/android/java_sdk_path = "$JAVA_HOME"
-          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
-          export/android/debug_keystore = "${{ github.workspace }}/debug.keystore"
-          export/android/debug_keystore_pass = "android"
-          export/android/debug_keystore_user = "androiddebugkey"
-          EOF
-          echo "--- Editor settings ---"
-          cat ~/.config/godot/editor_settings-4.4.tres
-
       - name: Import project
         run: |
           cd ${{ github.workspace }}
           timeout 60 godot --headless --import --quit-after 100 || true
+
+      - name: Write Godot editor settings
+        run: |
+          mkdir -p ~/.config/godot
+          printf '[gd_resource type="EditorSettings" format=3]\n[resource]\nexport/android/java_sdk_path = "%s"\nexport/android/android_sdk_path = "%s"\nexport/android/debug_keystore = "%s/debug.keystore"\nexport/android/debug_keystore_pass = "android"\nexport/android/debug_keystore_user = "androiddebugkey"\n' \
+            "$JAVA_HOME" "$ANDROID_SDK_ROOT" "${{ github.workspace }}" \
+            > ~/.config/godot/editor_settings-4.4.tres
+          echo "--- Editor settings ---"
+          cat ~/.config/godot/editor_settings-4.4.tres
 
       - name: Export APK
         run: |
