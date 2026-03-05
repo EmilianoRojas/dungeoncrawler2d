@@ -57,9 +57,12 @@ jobs:
           echo "=== Android templates ==="
           ls "$HOME/.local/share/godot/export_templates/4.4.stable/" | grep android
 
+                  
+      
       - name: Configure Godot editor settings
         run: |
           mkdir -p "$HOME/.config/godot"
+          # We use the env variables provided by the setup-android action
           cat > "$HOME/.config/godot/editor_settings-4.4.tres" << EOF
           [gd_resource type="EditorSettings" format=3]
           [resource]
@@ -68,8 +71,9 @@ jobs:
           export/android/debug_keystore = "$HOME/debug.keystore"
           export/android/debug_keystore_user = "androiddebugkey"
           export/android/debug_keystore_pass = "android"
+          export/android/force_system_user = false
           EOF
-          cat "$HOME/.config/godot/editor_settings-4.4.tres"
+          
 
       - name: Patch export preset keystore
         run: |
