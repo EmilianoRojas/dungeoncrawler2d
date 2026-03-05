@@ -79,40 +79,20 @@ jobs:
           sed -i 's|keystore/debug_password=""|keystore/debug_password="android"|' export_presets.cfg
           grep keystore export_presets.cfg
 
-      - name: Smoke test with minimal project
-        run: |
-          mkdir -p /tmp/testproject
-          cat > /tmp/testproject/project.godot << 'EOF'
-          [gd_resource type="Resource" load_steps=1 format=3]
-          [resource]
-          config_version=5
-          [application]
-          config/name="Test"
-          config/features=PackedStringArray("4.4", "GL Compatibility")
-          [rendering]
-          renderer/rendering_method="gl_compatibility"
-          renderer/rendering_method.mobile="gl_compatibility"
-          EOF
-          cat > /tmp/testproject/export_presets.cfg << EOF
-          [preset.0]
-          name="Android"
-          platform="Android"
-          runnable=true
-          export_filter="all_resources"
-          export_path="/tmp/test.apk"
-          [preset.0.options]
-          package/unique_name="com.test.minimal"
-          keystore/debug="$HOME/debug.keystore"
-          keystore/debug_user="androiddebugkey"
-          keystore/debug_password="android"
-          EOF
-          echo "=== Minimal project export ==="
-          cd /tmp/testproject
-          godot --headless --path /tmp/testproject --export-debug "Android" /tmp/test.apk 2>&1 | grep -v "not exposed, skipping" || true
-          ls -lh /tmp/test.apk 2>/dev/null && echo "MINIMAL EXPORT SUCCEEDED" || echo "MINIMAL EXPORT FAILED"
-
       - name: Export APK
+        env:
+          XDG_DATA_HOME: /home/runner/.local/share
         run: |
+          echo "=== XDG / env check ==="
+          echo "HOME=$HOME"
+          echo "XDG_DATA_HOME=$XDG_DATA_HOME"
+          echo "XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-unset}"
+          echo "=== Template check ==="
+          ls "$XDG_DATA_HOME/godot/export_templates/4.4.stable/" | grep android
+          echo "version.txt: $(cat $XDG_DATA_HOME/godot/export_templates/4.4.stable/version.txt)"
+          echo "=== aapt2 check ==="
+          find "$ANDROID_SDK_ROOT/build-tools" -name aapt2 2>/dev/null || echo "aapt2 not found"
+          echo "=== Running export ==="
           mkdir -p builds
           godot --headless --verbose --export-debug "Android" builds/dungeoncrawler.apk 2>&1 | grep -v "not exposed, skipping"
           echo "--- Build result ---"
