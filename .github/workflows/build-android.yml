@@ -20,16 +20,8 @@ jobs:
 
       - name: Setup export templates
         run: |
-          echo "HOME=$HOME"
-          echo "=== Container templates ==="
-          find /root/.local/share/godot/export_templates -maxdepth 2 2>/dev/null | head -10
-          mkdir -p $HOME/.local/share/godot/export_templates/
-          # Only move if source and dest differ
-          if [ "/root/.local/share/godot/export_templates/4.4.stable" != "$HOME/.local/share/godot/export_templates/4.4.stable" ]; then
-            mv /root/.local/share/godot/export_templates/4.4.stable $HOME/.local/share/godot/export_templates/4.4.stable
-          fi
-          echo "=== Templates in HOME ==="
-          ls $HOME/.local/share/godot/export_templates/4.4.stable/ | grep android
+          echo "=== Templates already in container ==="
+          ls /root/.local/share/godot/export_templates/4.4.stable/ | grep android
 
       - name: Patch preset with known container paths
         run: |
@@ -55,6 +47,7 @@ jobs:
       - name: Export APK
         env:
           XDG_CONFIG_HOME: /tmp/godot-config
+          XDG_DATA_HOME: /root/.local/share
         run: |
           JAVA_SDK=$(find /usr/lib/jvm -maxdepth 1 -mindepth 1 -type d | grep -v "^/usr/lib/jvm/default" | head -1)
           NDK=$(find /usr/lib/android-sdk/ndk -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)
