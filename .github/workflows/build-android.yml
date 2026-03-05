@@ -44,11 +44,16 @@ jobs:
           yes | /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34" 2>&1 | tail -3
 
       - name: Export APK
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_HOME: /usr/lib/android-sdk
+          ANDROID_NDK_HOME: /usr/lib/android-sdk/ndk/25.2.9519653
         run: |
           mkdir -p builds
-          godot --headless --export-debug "Android" builds/dungeoncrawler.apk 2>&1
+          # Run with verbose but filter out the noisy "not exposed" lines
+          godot --headless --verbose --export-debug "Android" builds/dungeoncrawler.apk 2>&1 | grep -v "not exposed, skipping"
           echo "--- Build result ---"
-          ls -lh builds/
+          ls -lh builds/ 2>/dev/null || echo "builds/ is empty or missing"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
