@@ -33,25 +33,23 @@ jobs:
           grep keystore export_presets.cfg
 
       - name: Export APK
+        env:
+          XDG_CONFIG_HOME: /tmp/godot-config
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_SDK_ROOT: /usr/lib/android-sdk
         run: |
-          echo "HOME=$HOME"
-          echo "whoami=$(whoami)"
-          echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME"
-          GODOT_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/godot"
-          echo "Writing settings to: $GODOT_CONFIG"
-          mkdir -p "$GODOT_CONFIG"
+          mkdir -p /tmp/godot-config/godot
           {
             echo '[gd_resource type="EditorSettings" format=3]'
             echo '[resource]'
-            echo 'export/android/java_sdk_path = "/usr"'
+            echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"'
             echo 'export/android/android_sdk_path = "/usr/lib/android-sdk"'
             echo 'export/android/debug_keystore = "/root/debug.keystore"'
             echo 'export/android/debug_keystore_user = "androiddebugkey"'
             echo 'export/android/debug_keystore_pass = "android"'
-          } | tee "$GODOT_CONFIG/editor_settings-4.4.tres" "$GODOT_CONFIG/editor_settings-4.tres"
-          # Also write to /root just in case
-          mkdir -p /root/.config/godot
-          cp "$GODOT_CONFIG/editor_settings-4.4.tres" /root/.config/godot/editor_settings-4.4.tres 2>/dev/null || true
+          } > /tmp/godot-config/godot/editor_settings-4.4.tres
+          echo "--- Settings ---"
+          cat /tmp/godot-config/godot/editor_settings-4.4.tres
           mkdir -p builds
           godot --headless --export-debug "Android" builds/dungeoncrawler.apk 2>&1
           ls -lh builds/
