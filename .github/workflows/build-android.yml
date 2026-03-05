@@ -32,23 +32,36 @@ jobs:
           echo "--- Preset keystore ---"
           grep keystore export_presets.cfg
 
+      - name: Find Java and Android paths
+        run: |
+          echo "=== JVM dirs ==="
+          find /usr/lib/jvm -maxdepth 1 -type d 2>/dev/null || echo "none"
+          echo "=== which java/javac/jarsigner ==="
+          which java || true
+          which javac || true
+          which jarsigner || true
+          echo "=== Android SDK ==="
+          ls /usr/lib/android-sdk/ 2>/dev/null || echo "none at /usr/lib/android-sdk"
+          ls /opt/android-sdk/ 2>/dev/null || echo "none at /opt/android-sdk"
+          echo "=== Keystore ==="
+          find / -name "debug.keystore" 2>/dev/null | head -5
+
       - name: Export APK
         env:
           XDG_CONFIG_HOME: /tmp/godot-config
-          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
-          ANDROID_SDK_ROOT: /usr/lib/android-sdk
         run: |
+          JAVA_SDK=$(find /usr/lib/jvm -maxdepth 1 -mindepth 1 -type d | grep -v "^/usr/lib/jvm/default" | head -1)
+          echo "Using Java SDK: $JAVA_SDK"
           mkdir -p /tmp/godot-config/godot
           {
             echo '[gd_resource type="EditorSettings" format=3]'
             echo '[resource]'
-            echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"'
+            echo "export/android/java_sdk_path = \"$JAVA_SDK\""
             echo 'export/android/android_sdk_path = "/usr/lib/android-sdk"'
             echo 'export/android/debug_keystore = "/root/debug.keystore"'
             echo 'export/android/debug_keystore_user = "androiddebugkey"'
             echo 'export/android/debug_keystore_pass = "android"'
           } > /tmp/godot-config/godot/editor_settings-4.4.tres
-          echo "--- Settings ---"
           cat /tmp/godot-config/godot/editor_settings-4.4.tres
           mkdir -p builds
           godot --headless --export-debug "Android" builds/dungeoncrawler.apk 2>&1
