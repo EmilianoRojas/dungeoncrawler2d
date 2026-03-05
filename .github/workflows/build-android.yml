@@ -34,9 +34,12 @@ jobs:
 
       - name: Export APK
         run: |
-          which javac
-          echo "javac found at $(which javac)"
-          mkdir -p /root/.config/godot
+          echo "HOME=$HOME"
+          echo "whoami=$(whoami)"
+          echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME"
+          GODOT_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/godot"
+          echo "Writing settings to: $GODOT_CONFIG"
+          mkdir -p "$GODOT_CONFIG"
           {
             echo '[gd_resource type="EditorSettings" format=3]'
             echo '[resource]'
@@ -45,9 +48,10 @@ jobs:
             echo 'export/android/debug_keystore = "/root/debug.keystore"'
             echo 'export/android/debug_keystore_user = "androiddebugkey"'
             echo 'export/android/debug_keystore_pass = "android"'
-          } > /root/.config/godot/editor_settings-4.4.tres
-          echo "--- Settings written ---"
-          cat /root/.config/godot/editor_settings-4.4.tres
+          } | tee "$GODOT_CONFIG/editor_settings-4.4.tres" "$GODOT_CONFIG/editor_settings-4.tres"
+          # Also write to /root just in case
+          mkdir -p /root/.config/godot
+          cp "$GODOT_CONFIG/editor_settings-4.4.tres" /root/.config/godot/editor_settings-4.4.tres 2>/dev/null || true
           mkdir -p builds
           godot --headless --export-debug "Android" builds/dungeoncrawler.apk 2>&1
           ls -lh builds/
