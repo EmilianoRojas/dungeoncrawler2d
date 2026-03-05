@@ -51,19 +51,29 @@ jobs:
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Import project
+      - name: Import project and patch editor settings
         run: |
           cd ${{ github.workspace }}
+          # Let Godot generate its own settings file
           timeout 60 godot --headless --import --quit-after 100 || true
-
-      - name: Write Godot editor settings
-        run: |
-          mkdir -p ~/.config/godot
-          printf '[gd_resource type="EditorSettings" format=3]\n[resource]\nexport/android/java_sdk_path = "%s"\nexport/android/android_sdk_path = "%s"\nexport/android/debug_keystore = "%s/debug.keystore"\nexport/android/debug_keystore_pass = "android"\nexport/android/debug_keystore_user = "androiddebugkey"\n' \
-            "$JAVA_HOME" "$ANDROID_SDK_ROOT" "${{ github.workspace }}" \
-            > ~/.config/godot/editor_settings-4.4.tres
-          echo "--- Editor settings ---"
-          cat ~/.config/godot/editor_settings-4.4.tres
+          # Show what settings file was created and where
+          echo "--- Settings files found ---"
+          find ~/.config/godot -name "*.tres" 2>/dev/null
+          SETTINGS_FILE=$(find ~/.config/godot -name "editor_settings-4*.tres" | head -1)
+          echo "--- Patching: $SETTINGS_FILE ---"
+          cat "$SETTINGS_FILE"
+          # Inject Android SDK paths (append if not present, replace if present)
+          sed -i '/export\/android\/java_sdk_path/d' "$SETTINGS_FILE"
+          sed -i '/export\/android\/android_sdk_path/d' "$SETTINGS_FILE"
+          sed -i '/export\/android\/debug_keystore/d' "$SETTINGS_FILE"
+          # Append before the last line (before closing of [resource])
+          sed -i "$ a export/android/java_sdk_path = \"$JAVA_HOME\"" "$SETTINGS_FILE"
+          sed -i "$ a export/android/android_sdk_path = \"$ANDROID_SDK_ROOT\"" "$SETTINGS_FILE"
+          sed -i "$ a export/android/debug_keystore = \"${{ github.workspace }}/debug.keystore\"" "$SETTINGS_FILE"
+          sed -i "$ a export/android/debug_keystore_pass = \"android\"" "$SETTINGS_FILE"
+          sed -i "$ a export/android/debug_keystore_user = \"androiddebugkey\"" "$SETTINGS_FILE"
+          echo "--- Patched settings ---"
+          cat "$SETTINGS_FILE"
 
       - name: Export APK
         run: |
