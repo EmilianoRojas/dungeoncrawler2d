@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="Skill" load_steps=2 format=3 uid="uid://heal_skill"]
+[gd_resource type="Resource" script_class="Skill" load_steps=3 format=3 uid="uid://heal_skill"]
 
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
+[ext_resource type="Texture2D" path="res://data/assets/Icon36.png" id="icon_tex"]
 
 [resource]
 script = ExtResource("1_skill")
@@ -14,5 +15,6 @@ base_power = 0
 max_cooldown = 3
 hit_chance = 100
 is_self_heal = true
+icon = ExtResource("icon_tex")
 impact_delay = 0.3
 vfx_color = Color(0.4, 1, 0.5, 1)

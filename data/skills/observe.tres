@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="Skill" load_steps=2 format=3 uid="uid://observe_skill"]
+[gd_resource type="Resource" script_class="Skill" load_steps=3 format=3 uid="uid://observe_skill"]
 
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
+[ext_resource type="Texture2D" path="res://data/assets/Icon6.png" id="icon_tex"]
 
 [resource]
 script = ExtResource("1_skill")
@@ -15,5 +16,6 @@ max_cooldown = 0
 hit_chance = 100
 is_self_heal = true
 is_observe = true
+icon = ExtResource("icon_tex")
 impact_delay = 0.2
 vfx_color = Color(1, 1, 1, 1)

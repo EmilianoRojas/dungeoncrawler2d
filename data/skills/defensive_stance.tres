@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="Skill" load_steps=3 format=3 uid="uid://defensive_stance_skill"]
+[gd_resource type="Resource" script_class="Skill" load_steps=4 format=3 uid="uid://defensive_stance_skill"]
 
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
 [ext_resource type="Resource" uid="uid://iron_skin_effect" path="res://data/effects/iron_skin.tres" id="2_effect"]
+[ext_resource type="Texture2D" path="res://data/assets/Icon17.png" id="icon_tex"]
 
 [resource]
 script = ExtResource("1_skill")
@@ -14,6 +15,6 @@ on_hit_effects = Array[Resource]([])
 base_power = 0
 max_cooldown = 3
 hit_chance = 100
+icon = ExtResource("icon_tex")
 impact_delay = 0.2
 vfx_color = Color(0.65, 0.7, 1, 1)
-

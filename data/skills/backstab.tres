@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="Skill" load_steps=3 format=3 uid="uid://pt58amveqb1w"]
+[gd_resource type="Resource" script_class="Skill" load_steps=4 format=3 uid="uid://pt58amveqb1w"]
 
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
 [ext_resource type="Script" uid="uid://culub74taadkn" path="res://core/effects/effect_resource.gd" id="1_w25cv"]
+[ext_resource type="Texture2D" path="res://data/assets/Icon4.png" id="icon_tex"]
 
 [resource]
 script = ExtResource("1_skill")
@@ -18,5 +19,6 @@ ignores_shield = false
 is_self_heal = false
 is_observe = false
 skill_level = 1
+icon = ExtResource("icon_tex")
 impact_delay = 0.2
 vfx_color = Color(0.5, 0.9, 0.5, 1)

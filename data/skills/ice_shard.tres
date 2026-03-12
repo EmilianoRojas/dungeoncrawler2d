@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="Skill" load_steps=2 format=3 uid="uid://ice_shard_skill"]
+[gd_resource type="Resource" script_class="Skill" load_steps=3 format=3 uid="uid://ice_shard_skill"]
 
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
+[ext_resource type="Texture2D" path="res://data/assets/Icon28.png" id="icon_tex"]
 
 [resource]
 script = ExtResource("1_skill")
@@ -13,5 +14,6 @@ on_hit_effects = Array[Resource]([])
 base_power = 8
 max_cooldown = 2
 hit_chance = 90
+icon = ExtResource("icon_tex")
 impact_delay = 0.5
 vfx_color = Color(0.6, 0.92, 1, 1)
