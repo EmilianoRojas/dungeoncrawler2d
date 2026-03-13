@@ -6,6 +6,7 @@
 [resource]
 script = ExtResource("1_skill")
 skill_name = "Observe"
+skill_type = 5
 scaling_type = 0
 scaling_stat = &"intelligence"
 scaling_percent = 0.0

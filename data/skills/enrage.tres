@@ -7,6 +7,7 @@
 [resource]
 script = ExtResource("1_skill")
 skill_name = "Enrage"
+skill_type = 2
 scaling_type = 0
 scaling_stat = &"strength"
 scaling_percent = 1.0

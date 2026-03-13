@@ -6,7 +6,17 @@ enum ScalingType {
 	STAT_PERCENT
 }
 
+enum SkillType {
+	DAMAGE,
+	HEAL,
+	BUFF,
+	DEBUFF,
+	DOT,
+	UTILITY
+}
+
 @export var skill_name: String = "Skill"
+@export var skill_type: SkillType = SkillType.DAMAGE
 
 # Scaling
 @export var scaling_type: ScalingType = ScalingType.STAT_PERCENT
