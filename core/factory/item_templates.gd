@@ -6,9 +6,9 @@ extends Object
 # ItemFactory duplicates these and adds random bonuses.
 
 # Allowed stats per slot — determines which stats get rolled
-const WEAPON_STATS: Array[StringName] = [&"strength", &"dexterity", &"intelligence", &"piety", &"power", &"crit_chance"]
-const ARMOR_STATS: Array[StringName] = [&"max_hp", &"defense", &"max_shield", &"parry_chance"]
-const HELMET_STATS: Array[StringName] = [&"max_hp", &"intelligence", &"piety", &"avoid_chance", &"accuracy"]
+const WEAPON_STATS: Array[StringName] = [&"strength", &"dexterity", &"intelligence", &"piety", &"power", &"crit_chance", &"max_hp", &"defense"]
+const ARMOR_STATS: Array[StringName] = [&"max_hp", &"defense", &"max_shield", &"parry_chance", &"strength", &"dexterity"]
+const HELMET_STATS: Array[StringName] = [&"max_hp", &"intelligence", &"piety", &"avoid_chance", &"accuracy", &"strength", &"dexterity"]
 
 static func get_allowed_stats(slot: EquipmentSlot.Type) -> Array[StringName]:
 	match slot:

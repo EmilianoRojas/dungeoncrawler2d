@@ -26,6 +26,19 @@ const STAT_VALUE_PER_POINT: Dictionary = {
 	StatTypes.ACCURACY: 2,
 }
 
+const ITEM_PASSIVE_POOL: Array[StringName] = [
+	&"supply_route",
+	&"avoid_critical",
+	&"poisonous",
+	&"damage_reduce",
+	&"technique",
+	&"counter",
+	&"weaken",
+	&"swordmanship",
+	&"momentum",
+	&"divine_retribution",
+]
+
 # --- MAIN API ---
 
 ## Generate a procedural item from a base template, scaled by floor.
@@ -72,7 +85,15 @@ static func generate_item(base_template: EquipmentResource, dungeon_floor: int) 
 	# 7. Update display name with rarity prefix
 	if rarity_index > 0:
 		item.display_name = "%s %s" % [item.rarity, item.display_name]
-	
+
+	# 8. Roll passive for Rare/Epic items (NOT Legendary — those are hand-crafted)
+	if rarity_index == 1:  # Rare: 35% chance
+		if randf() < 0.35:
+			_add_random_passive(item)
+	elif rarity_index == 2:  # Epic: guaranteed passive
+		_add_random_passive(item)
+	# rarity_index == 3 (Legendary): no random passive
+
 	return item
 
 ## Generate a random item from the template registry.
@@ -103,6 +124,19 @@ static func _roll_rarity(dungeon_floor: int) -> int:
 	
 	# Common
 	return 0
+
+static func _add_random_passive(item: EquipmentResource) -> void:
+	var passive_id = ITEM_PASSIVE_POOL[randi() % ITEM_PASSIVE_POOL.size()]
+	var passive_info = PassiveLibrary.get_passive(passive_id)
+	if passive_info.is_empty():
+		return
+	# Store passive_id in item so EquipmentComponent can apply it
+	# We use a custom EffectResource with effect_id = "passive:<id>" as a marker
+	var marker = EffectResource.new()
+	marker.effect_id = StringName("passive:" + str(passive_id))
+	item.passive_effects.append(marker)
+	# Append passive name to display_name
+	item.display_name = item.display_name + " [" + passive_info.get("name", str(passive_id)) + "]"
 
 ## Force a minimum rarity (used for boss drops)
 static func bump_rarity(current_rarity: String) -> String:

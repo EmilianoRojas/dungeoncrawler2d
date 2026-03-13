@@ -57,6 +57,15 @@ func _apply_equipment_modifiers(item: EquipmentResource) -> void:
 		for passive in item.passive_effects:
 			passive_effect_component.add_passive(passive, source_id)
 
+	# Apply passive markers (effect_id starts with "passive:") via PassiveLibrary
+	if owner_entity and owner_entity.passives:
+		for eff in item.passive_effects:
+			if str(eff.effect_id).begins_with("passive:"):
+				var passive_id = StringName(str(eff.effect_id).substr(8))  # remove "passive:"
+				var passive_info = PassiveLibrary.get_passive(passive_id)
+				if not passive_info.is_empty():
+					owner_entity.passives.add_passive(null, StringName("equip_" + str(item.id)), passive_info)
+
 # GENERIC MODIFIER API
 func add_modifier(source: Resource) -> void:
 	if not source: return
@@ -108,7 +117,12 @@ func unequip(slot: EquipmentSlot.Type) -> void:
 	# 3. Remove Passives
 	if passive_effect_component:
 		passive_effect_component.remove_from_source(source_id)
-	
+
+	# 4. Remove PassiveLibrary passives registered from passive: markers
+	if owner_entity and owner_entity.passives:
+		var item = equipped_items[slot]
+		owner_entity.passives.remove_from_source(StringName("equip_" + str(item.id)))
+
 	print("Unequipped slot %s" % EquipmentSlot.Type.keys()[slot])
 
 func _get_source_id(slot: EquipmentSlot.Type) -> StringName:
