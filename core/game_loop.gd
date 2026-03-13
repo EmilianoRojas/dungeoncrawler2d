@@ -244,8 +244,8 @@ func _start_combat(node: MapNode) -> void:
 	passive_resolver.register(player_entity)
 	passive_resolver.register(enemy)
 	
-	turn_manager.start_battle(player_entity, [enemy])
 	game_ui.initialize_battle(player_entity, [enemy])
+	turn_manager.start_battle(player_entity, [enemy])
 	game_ui.set_mode(true)
 	
 	# Dispatch battle_start event for passives
@@ -671,6 +671,7 @@ func _get_run_stats() -> Dictionary:
 func _show_game_over_screen() -> void:
 	current_state = State.MENU
 	game_ui.set_mode(false)
+	PlayerProfile.record_run(false, dungeon_manager.current_floor if dungeon_manager else 0)
 	
 	var screen = GameOverScreen.new()
 	screen.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -681,6 +682,7 @@ func _show_game_over_screen() -> void:
 func _show_victory_screen() -> void:
 	current_state = State.MENU
 	game_ui.set_mode(false)
+	PlayerProfile.record_run(true, dungeon_manager.total_floors if dungeon_manager else 0)
 	
 	var screen = VictoryScreen.new()
 	screen.set_anchors_preset(Control.PRESET_FULL_RECT)

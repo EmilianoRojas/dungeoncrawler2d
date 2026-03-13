@@ -53,8 +53,8 @@ var _wait_button: Button = null
 var _rune_panel: RunePanel = null
 
 # Turn indicator nodes
-var _player_turn_indicator: Control = null
-var _enemy_turn_indicator: Control = null
+var _player_turn_indicator: Label = null
+var _enemy_turn_indicator: Label = null
 
 func _ready() -> void:
 	# Initialize Room Selector
@@ -150,6 +150,7 @@ func initialize_battle(player: Entity, enemies: Array[Entity]) -> void:
 		enemy_label.text = enemies[0].name
 		if enemies[0].sprite:
 			enemy_sprite.texture = enemies[0].sprite
+			enemy_sprite.flip_h = true
 			enemy_sprite.visible = true
 		else:
 			enemy_sprite.visible = false
@@ -177,42 +178,29 @@ func _setup_turn_indicators() -> void:
 		_player_turn_indicator.queue_free()
 	if _enemy_turn_indicator:
 		_enemy_turn_indicator.queue_free()
-	
+
 	_player_turn_indicator = _make_turn_indicator(true)
 	_enemy_turn_indicator = _make_turn_indicator(false)
-	
-	$BattleContainer/PlayerInfo.add_child(_player_turn_indicator)
-	$BattleContainer/PlayerInfo.move_child(_player_turn_indicator, 0)
-	
-	$BattleContainer/EnemyInfo.add_child(_enemy_turn_indicator)
-	$BattleContainer/EnemyInfo.move_child(_enemy_turn_indicator, 0)
-	
+
+	# Add as overlay on top of each sprite rect
+	player_sprite.add_child(_player_turn_indicator)
+	enemy_sprite.add_child(_enemy_turn_indicator)
+
 	# Start hidden — will be shown by set_turn_phase()
 	_player_turn_indicator.visible = false
 	_enemy_turn_indicator.visible = false
 
-func _make_turn_indicator(is_player: bool) -> Control:
-	var panel = PanelContainer.new()
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
-	style.border_color = Color(1.0, 0.85, 0.2, 0.9) if is_player else Color(1.0, 0.35, 0.35, 0.9)
-	style.border_width_top = 0
-	style.border_width_bottom = 2
-	style.border_width_left = 0
-	style.border_width_right = 0
-	style.content_margin_top = 2
-	style.content_margin_bottom = 2
-	style.content_margin_left = 4
-	style.content_margin_right = 4
-	panel.add_theme_stylebox_override("panel", style)
-	
+func _make_turn_indicator(is_player: bool) -> Label:
 	var lbl = Label.new()
-	lbl.text = "⚔ YOUR TURN" if is_player else "💀 ENEMY TURN"
+	lbl.text = "▼"
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 12)
-	lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2) if is_player else Color(1.0, 0.5, 0.5))
-	panel.add_child(lbl)
-	return panel
+	lbl.add_theme_font_size_override("font_size", 16)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2) if is_player else Color(1.0, 0.35, 0.35))
+	# Anchor to top-center of the sprite rect
+	lbl.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	lbl.offset_top = -24
+	lbl.offset_bottom = -2
+	return lbl
 
 ## Update which entity is highlighted based on the current turn phase.
 ## Call this from GameLoop when TurnManager.phase_changed fires.
@@ -220,16 +208,10 @@ func set_turn_phase(phase: int) -> void: # phase: TurnManager.Phase
 	if not _player_turn_indicator or not _enemy_turn_indicator:
 		return
 	match phase:
-		0: # WAITING
-			_player_turn_indicator.visible = false
-			_enemy_turn_indicator.visible = false
 		1: # DECISION — player is choosing
 			_player_turn_indicator.visible = true
 			_enemy_turn_indicator.visible = false
-		2: # RESOLUTION — actions executing
-			_player_turn_indicator.visible = false
-			_enemy_turn_indicator.visible = true
-		_:
+		_: # WAITING, RESOLUTION, WIN, LOSS — hide both while animations play
 			_player_turn_indicator.visible = false
 			_enemy_turn_indicator.visible = false
 

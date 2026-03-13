@@ -130,6 +130,7 @@ func load_runes() -> void:
 
 	if data.has("equipped"):
 		for class_title in data["equipped"]:
-			equipped_runes[str(class_title)] = []
+			var arr: Array[StringName] = []
 			for id_str in data["equipped"][class_title]:
-				equipped_runes[str(class_title)].append(StringName(str(id_str)))
+				arr.append(StringName(str(id_str)))
+			equipped_runes[str(class_title)] = arr

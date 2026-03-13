@@ -11,7 +11,10 @@ func add_action(action: Action) -> void:
 		if a.priority != b.priority:
 			return a.priority > b.priority
 		# Secondary: Speed
-		return a.speed > b.speed
+		if a.speed != b.speed:
+			return a.speed > b.speed
+		# Tiebreaker: random (assigned at action creation)
+		return a._tiebreaker > b._tiebreaker
 	)
 
 func peek_next() -> Action:
