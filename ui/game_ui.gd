@@ -56,6 +56,10 @@ var _rune_panel: RunePanel = null
 var _player_turn_indicator: Label = null
 var _enemy_turn_indicator: Label = null
 
+# Skill tooltip
+var _skill_tooltip: Control = null
+var _tooltip_hide_timer: Timer = null
+
 func _ready() -> void:
 	# Initialize Room Selector
 	room_selector = ROOM_SELECTOR_SCENE.instantiate()
@@ -250,6 +254,7 @@ func _populate_skills(player: Entity) -> void:
 			skill_container.add_child(btn)
 			btn.setup(skill)
 			btn.pressed.connect(func(): _on_skill_pressed(skill))
+			btn.tooltip_requested.connect(_show_skill_tooltip)
 	
 	# Add Wait button (hidden by default, shown when all skills on CD)
 	_wait_button = Button.new()
@@ -277,6 +282,123 @@ func update_skill_cooldowns(player: Entity) -> void:
 	# Show/hide wait button
 	if _wait_button:
 		_wait_button.visible = not any_ready
+
+# --- Skill tooltip ---
+
+func _show_skill_tooltip(skill: Skill, btn_gpos: Vector2) -> void:
+	_hide_skill_tooltip()
+
+	var panel := PanelContainer.new()
+	var sty := StyleBoxFlat.new()
+	sty.bg_color    = Color(0.06, 0.06, 0.10, 0.96)
+	sty.border_color = Color(0.55, 0.45, 0.80)
+	sty.set_border_width_all(2)
+	sty.set_corner_radius_all(8)
+	sty.content_margin_left   = 14
+	sty.content_margin_right  = 14
+	sty.content_margin_top    = 10
+	sty.content_margin_bottom = 10
+	panel.add_theme_stylebox_override("panel", sty)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 5)
+	vb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(vb)
+
+	# Name
+	var name_lbl := Label.new()
+	name_lbl.text = skill.skill_name
+	name_lbl.add_theme_font_size_override("font_size", 16)
+	name_lbl.add_theme_color_override("font_color", Color(0.95, 0.85, 0.45))
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vb.add_child(name_lbl)
+
+	vb.add_child(_tt_sep())
+
+	# Damage line
+	var dmg_str: String
+	if skill.scaling_type == Skill.ScalingType.FLAT:
+		dmg_str = "Deals %d damage" % skill.base_power
+	else:
+		var pct := int(skill.scaling_percent * 100.0)
+		var stat := str(skill.scaling_stat).capitalize()
+		if skill.base_power > 0:
+			dmg_str = "Deals %d%% %s  +  %d base" % [pct, stat, skill.base_power]
+		else:
+			dmg_str = "Deals %d%% %s" % [pct, stat]
+
+	if skill.is_self_heal:
+		dmg_str = dmg_str.replace("Deals", "Heals for")
+
+	vb.add_child(_tt_line(dmg_str, Color(0.85, 0.85, 0.85)))
+
+	# Hit / CD
+	var hit_str := "Hit: %d%%   |   Cooldown: %d turns" % [skill.hit_chance, skill.max_cooldown]
+	if skill.max_cooldown == 0:
+		hit_str = "Hit: %d%%   |   No cooldown" % skill.hit_chance
+	vb.add_child(_tt_line(hit_str, Color(0.60, 0.70, 0.85)))
+
+	# Special flags
+	if skill.ignores_shield:
+		vb.add_child(_tt_line("✦ Penetrating — ignores shield", Color(1.0, 0.55, 0.35)))
+	if skill.is_observe:
+		vb.add_child(_tt_line("✦ Reveals enemy info", Color(0.50, 0.85, 0.55)))
+
+	# On-cast / on-hit effects
+	if skill.on_cast_effects.size() > 0:
+		var names := skill.on_cast_effects.map(func(e): return e.effect_id if "effect_id" in e else "?")
+		vb.add_child(_tt_line("On cast: %s" % ", ".join(names), Color(0.75, 0.60, 1.00)))
+	if skill.on_hit_effects.size() > 0:
+		var names := skill.on_hit_effects.map(func(e): return e.effect_id if "effect_id" in e else "?")
+		vb.add_child(_tt_line("On hit: %s" % ", ".join(names), Color(0.75, 0.60, 1.00)))
+
+	# Skill level bonus
+	if skill.skill_level > 1:
+		vb.add_child(_tt_line("Lv.%d  (+%d%% damage)" % [skill.skill_level, (skill.skill_level - 1) * 10],
+			Color(0.90, 0.75, 0.30)))
+
+	# Add to scene so it renders on top
+	add_child(panel)
+	_skill_tooltip = panel
+
+	# Position: above the button, clamped to viewport
+	await get_tree().process_frame  # let panel compute its size
+	var vp_size: Vector2 = get_viewport_rect().size
+	var panel_size: Vector2 = panel.size
+	var x: float = clampf(btn_gpos.x, 4.0, vp_size.x - panel_size.x - 4.0)
+	var y: float = btn_gpos.y - panel_size.y - 8.0
+	if y < 4.0:
+		y = btn_gpos.y + 80.0  # flip below if too close to top
+	panel.set_global_position(Vector2(x, y))
+
+	# Auto-hide after 3 seconds
+	if not _tooltip_hide_timer:
+		_tooltip_hide_timer = Timer.new()
+		_tooltip_hide_timer.one_shot = true
+		_tooltip_hide_timer.timeout.connect(_hide_skill_tooltip)
+		add_child(_tooltip_hide_timer)
+	_tooltip_hide_timer.start(3.0)
+
+func _hide_skill_tooltip() -> void:
+	if _skill_tooltip:
+		_skill_tooltip.queue_free()
+		_skill_tooltip = null
+	if _tooltip_hide_timer:
+		_tooltip_hide_timer.stop()
+
+func _tt_line(txt: String, color: Color) -> Label:
+	var l := Label.new()
+	l.text = txt
+	l.add_theme_font_size_override("font_size", 12)
+	l.add_theme_color_override("font_color", color)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return l
+
+func _tt_sep() -> HSeparator:
+	var s := HSeparator.new()
+	s.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return s
 
 # --- Log ---
 
