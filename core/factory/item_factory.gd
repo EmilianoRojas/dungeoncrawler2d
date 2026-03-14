@@ -56,7 +56,7 @@ static func generate_item(base_template: EquipmentResource, dungeon_floor: int) 
 	budget = max(1, budget) # At least 1 point
 	
 	# 4. Get allowed stats for this slot
-	var allowed_stats = ItemTemplates.get_allowed_stats(item.slot)
+	var allowed_stats = ItemLibrary.get_allowed_stats(item.slot)
 	if allowed_stats.is_empty():
 		return item
 	
@@ -98,7 +98,7 @@ static func generate_item(base_template: EquipmentResource, dungeon_floor: int) 
 
 ## Generate a random item from the template registry.
 static func generate_random_item(dungeon_floor: int, slot: int = -1) -> EquipmentResource:
-	var template = ItemTemplates.get_random_template(slot)
+	var template = ItemLibrary.get_random_template(slot)
 	return generate_item(template, dungeon_floor)
 
 # --- RARITY ROLLS ---

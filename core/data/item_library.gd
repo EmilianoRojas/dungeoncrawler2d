@@ -1,4 +1,4 @@
-class_name ItemTemplates
+class_name ItemLibrary
 extends Object
 
 # Static registry of base item templates for procedural generation.
