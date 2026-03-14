@@ -9,6 +9,7 @@ display_name = "Hood"
 slot = 2
 rarity = "Common"
 icon_path = "res://data/assets/items/hat_hood.png"
+allowed_stats = [&"dexterity", &"avoid_chance", &"accuracy", &"intelligence"]
 equip_effects = []
 granted_skills = []
 passive_effects = []

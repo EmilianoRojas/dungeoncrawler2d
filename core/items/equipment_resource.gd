@@ -6,6 +6,7 @@ extends Resource
 @export var slot: EquipmentSlot.Type
 @export_enum("Common", "Rare", "Epic", "Legendary") var rarity: String = "Common"
 @export var icon_path: String = ""  # e.g. "res://data/assets/items/sword_01.png"
+@export var allowed_stats: Array[StringName] = []  # Stats that can roll on this item
 
 # A) Stat Modifiers (Applied once on equip)
 @export var equip_effects: Array[EffectResource]

@@ -9,6 +9,7 @@ display_name = "Dagger"
 slot = 0
 rarity = "Common"
 icon_path = "res://data/assets/items/sword_03.png"
+allowed_stats = [&"dexterity", &"crit_chance", &"crit_damage", &"accuracy", &"power"]
 equip_effects = []
 granted_skills = []
 passive_effects = []

@@ -9,6 +9,7 @@ display_name = "Short Bow"
 slot = 0
 rarity = "Common"
 icon_path = "res://data/assets/items/bow_01.png"
+allowed_stats = [&"dexterity", &"accuracy", &"crit_chance", &"power"]
 equip_effects = []
 granted_skills = []
 passive_effects = []

@@ -9,6 +9,7 @@ display_name = "Iron Shield"
 slot = 3
 rarity = "Common"
 icon_path = "res://data/assets/items/shield_02.png"
+allowed_stats = [&"defense", &"max_shield", &"parry_chance", &"strength", &"max_hp"]
 equip_effects = []
 granted_skills = []
 passive_effects = []

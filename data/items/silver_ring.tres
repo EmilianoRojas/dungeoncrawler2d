@@ -9,6 +9,7 @@ display_name = "Silver Ring"
 slot = 7
 rarity = "Common"
 icon_path = "res://data/assets/items/ring_02.png"
+allowed_stats = [&"intelligence", &"piety", &"power", &"crit_chance", &"crit_damage"]
 equip_effects = []
 granted_skills = []
 passive_effects = []

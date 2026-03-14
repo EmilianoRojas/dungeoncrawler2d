@@ -9,6 +9,7 @@ display_name = "Staff"
 slot = 0
 rarity = "Common"
 icon_path = "res://data/assets/items/staff_01.png"
+allowed_stats = [&"intelligence", &"piety", &"power", &"crit_chance"]
 equip_effects = []
 granted_skills = []
 passive_effects = []

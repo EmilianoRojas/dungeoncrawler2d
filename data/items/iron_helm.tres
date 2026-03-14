@@ -9,6 +9,7 @@ display_name = "Iron Helm"
 slot = 2
 rarity = "Common"
 icon_path = "res://data/assets/items/helmet_iron.png"
+allowed_stats = [&"max_hp", &"defense", &"strength", &"accuracy"]
 equip_effects = []
 granted_skills = []
 passive_effects = []

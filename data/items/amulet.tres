@@ -9,6 +9,7 @@ display_name = "Amulet"
 slot = 8
 rarity = "Common"
 icon_path = "res://data/assets/items/necklace_01.png"
+allowed_stats = [&"piety", &"intelligence", &"power", &"max_hp", &"defense", &"crit_chance"]
 equip_effects = []
 granted_skills = []
 passive_effects = []

@@ -9,6 +9,7 @@ display_name = "Crown"
 slot = 2
 rarity = "Common"
 icon_path = "res://data/assets/items/hat_crown.png"
+allowed_stats = [&"intelligence", &"piety", &"avoid_chance", &"power"]
 equip_effects = []
 granted_skills = []
 passive_effects = []

@@ -9,6 +9,7 @@ display_name = "Leather Boots"
 slot = 6
 rarity = "Common"
 icon_path = "res://data/assets/items/boots_01.png"
+allowed_stats = [&"speed", &"avoid_chance", &"dexterity", &"max_hp"]
 equip_effects = []
 granted_skills = []
 passive_effects = []

@@ -55,8 +55,10 @@ static func generate_item(base_template: EquipmentResource, dungeon_floor: int) 
 	var budget = int(base_budget * RARITY_BUDGET_MULT[rarity_index])
 	budget = max(1, budget) # At least 1 point
 	
-	# 4. Get allowed stats for this slot
-	var allowed_stats = ItemLibrary.get_allowed_stats(item.slot)
+	# 4. Get allowed stats — prefer per-item definition, fallback to slot pool
+	var allowed_stats: Array[StringName] = item.allowed_stats
+	if allowed_stats.is_empty():
+		allowed_stats = ItemLibrary.get_allowed_stats(item.slot)
 	if allowed_stats.is_empty():
 		return item
 	

@@ -9,6 +9,7 @@ display_name = "Hunter's Bow"
 slot = 0
 rarity = "Common"
 icon_path = "res://data/assets/items/bow_02.png"
+allowed_stats = [&"dexterity", &"accuracy", &"crit_chance", &"crit_damage", &"power"]
 equip_effects = []
 granted_skills = []
 passive_effects = []
