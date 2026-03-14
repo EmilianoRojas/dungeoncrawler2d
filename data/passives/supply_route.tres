@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SupplyRouteEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/passives/supply_route_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"supply_route"
+passive_name = "Supply Route"
+description = "Camp item cooldown reduced by 1 when entering Torch rooms."
+trigger = "room_enter"

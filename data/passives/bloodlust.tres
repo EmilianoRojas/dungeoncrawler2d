@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="BloodlustEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/passives/bloodlust_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"bloodlust"
+passive_name = "Bloodlust"
+description = "Gain +5% Strength per 20% HP missing (up to +25%). The closer to death, the stronger you become."
+trigger = "damage_taken"

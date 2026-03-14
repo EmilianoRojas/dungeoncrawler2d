@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PoisonousEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/passives/poisonous_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"poisonous"
+passive_name = "Poisonous"
+description = "+25% damage on skills that apply on-hit effects."
+trigger = "pre_damage_calc"

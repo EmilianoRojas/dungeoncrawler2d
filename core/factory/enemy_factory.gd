@@ -160,9 +160,9 @@ static func _apply_boss_modifiers(enemy: Entity) -> void:
 static func _apply_passive_by_id(enemy: Entity, passive_id: StringName, source_id: StringName) -> void:
 	if not enemy.passives:
 		return
-	var passive_info = PassiveLibrary.get_passive(passive_id)
-	if not passive_info.is_empty():
-		enemy.passives.add_passive(null, source_id, passive_info)
+	var pe = PassiveLibrary.get_passive(passive_id)
+	if pe:
+		enemy.passives.add_passive(pe, source_id)
 
 ## Apply dungeon-specific stat scaling multiplier on top of base scaling.
 static func _apply_scaling_mult(enemy: Entity, mult: float) -> void:

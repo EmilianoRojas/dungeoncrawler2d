@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ToxinMasteryEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/passives/toxin_mastery_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"toxin_mastery"
+passive_name = "Toxin Mastery"
+description = "Poison effects deal +50% damage. On hit with a poison skill, apply 1 extra poison stack."
+trigger = "damage_dealt"

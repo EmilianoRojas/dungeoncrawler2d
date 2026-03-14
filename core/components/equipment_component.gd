@@ -52,19 +52,14 @@ func _apply_equipment_modifiers(item: EquipmentResource) -> void:
 		for skill in item.granted_skills:
 			skill_component.add_skill(skill, source_id)
 			
-	# Apply Passives
-	if passive_effect_component:
-		for passive in item.passive_effects:
-			passive_effect_component.add_passive(passive, source_id)
-
 	# Apply passive markers (effect_id starts with "passive:") via PassiveLibrary
 	if owner_entity and owner_entity.passives:
 		for eff in item.passive_effects:
 			if str(eff.effect_id).begins_with("passive:"):
-				var passive_id = StringName(str(eff.effect_id).substr(8))  # remove "passive:"
-				var passive_info = PassiveLibrary.get_passive(passive_id)
-				if not passive_info.is_empty():
-					owner_entity.passives.add_passive(null, StringName("equip_" + str(item.id)), passive_info)
+				var passive_id_str = str(eff.effect_id).substr(8)
+				var pe = PassiveLibrary.get_passive(StringName(passive_id_str))
+				if pe:
+					owner_entity.passives.add_passive(pe, StringName("equip_" + str(item.id)))
 
 # GENERIC MODIFIER API
 func add_modifier(source: Resource) -> void:

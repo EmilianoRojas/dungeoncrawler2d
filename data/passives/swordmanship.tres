@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SwordmanshipEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/passives/swordmanship_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"swordmanship"
+passive_name = "Swordmanship"
+description = "On successful parry, gain +15% Strength for 5 turns."
+trigger = "parry_success"

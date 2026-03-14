@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ShadowStepEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/passives/shadow_step_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"shadow_step"
+passive_name = "Shadow Step"
+description = "After successfully dodging, your next attack deals +80% damage and cannot miss."
+trigger = "avoid_success"

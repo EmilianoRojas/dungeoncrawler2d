@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="MomentumEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/passives/momentum_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"momentum"
+passive_name = "Momentum"
+description = "Each consecutive hit adds +5% damage (max +25% at 5 stacks). Missing resets the streak."
+trigger = "damage_dealt"

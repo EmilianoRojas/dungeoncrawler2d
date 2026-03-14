@@ -85,13 +85,10 @@ static func execute(instance: EffectInstance, owner: Entity, context: CombatCont
 				# Scale off caster stats dynamically — supports toxin_mastery and future DoT passives
 				var caster: Entity = instance.caster
 				if caster and caster.passives:
-					for p_data in caster.passives.active_passives:
-						var p_info = p_data.get("passive_info", {}) as Dictionary
-						match p_info.get("logic", ""):
-							"toxin_mastery":
-								if instance.resource.effect_id == &"poison":
-									dot_damage = int(dot_damage * 1.5)
-							# Future DoT-boosting passives can be added here
+					for entry in caster.passives.active_passives:
+						var p = entry.get("passive") as PassiveEffect
+						if p and p.id == &"toxin_mastery" and instance.resource.effect_id == &"poison":
+							dot_damage = int(dot_damage * 1.5)
 				
 				# Route through the damage pipeline so shields, passives, and events all apply
 				var dot_context = CombatContext.new(caster, owner, null)

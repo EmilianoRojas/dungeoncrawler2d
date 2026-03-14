@@ -80,9 +80,9 @@ func apply_runes_to_entity(entity: Entity, class_title: String) -> void:
 
 		# Apply passive if any
 		if rune.passive_id != &"":
-			var passive_info: Dictionary = PassiveLibrary.get_passive(rune.passive_id)
-			if not passive_info.is_empty():
-				entity.passives.add_passive(null, &"rune", passive_info)
+			var pe = PassiveLibrary.get_passive(rune.passive_id)
+			if pe:
+				entity.passives.add_passive(pe, &"rune")
 
 # --- Persistence ---
 

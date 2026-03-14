@@ -85,16 +85,13 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 	# 3. Hit Check — skill accuracy + source accuracy stat
 	# Shadow Step: if buff is ready, consume it (forced hit + damage bonus applied later)
 	var shadow_step_active = false
-	var passive_resolver = Engine.get_main_loop().current_scene.get_node_or_null("GameLoop/PassiveResolver")
-	if passive_resolver == null:
-		passive_resolver = Engine.get_main_loop().current_scene.get_node_or_null("PassiveResolver")
 	var total_hit = skill.hit_chance + source.stats.get_stat(StatTypes.ACCURACY)
 	if randi() % 100 >= total_hit:
 		# Check shadow step before declaring miss
-		if passive_resolver and passive_resolver.has_method("consume_shadow_step"):
-			# We pass a temp dict to check — if shadow step consumed, don't miss
+		var shadow = source.passives.find_passive(&"shadow_step") if source.passives else null
+		if shadow:
 			var temp = {"damage": 0}
-			if passive_resolver.consume_shadow_step(source, temp):
+			if shadow.consume(source, temp):
 				shadow_step_active = true
 			else:
 				GlobalEventBus.dispatch("combat_log", {
@@ -125,10 +122,12 @@ static func execute(skill: Skill, source: Entity, target: Entity) -> void:
 	context.damage = damage
 
 	# 5b. Shadow Step bonus (if triggered via forced hit path)
-	if shadow_step_active and passive_resolver and passive_resolver.has_method("consume_shadow_step"):
-		var temp = {"damage": context.damage}
-		passive_resolver.consume_shadow_step(source, temp)
-		context.damage = temp.get("damage", context.damage)
+	if shadow_step_active:
+		var shadow = source.passives.find_passive(&"shadow_step") if source.passives else null
+		if shadow:
+			var temp = {"damage": context.damage}
+			shadow.consume(source, temp)
+			context.damage = temp.get("damage", context.damage)
 
 	# 6. Crit Roll
 	var crit_chance = source.stats.get_stat(StatTypes.CRIT_CHANCE)

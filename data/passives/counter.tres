@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CounterEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/passives/counter_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"counter"
+passive_name = "Counter"
+description = "Reduce all skill cooldowns by 1 whenever you take damage."
+trigger = "damage_taken"

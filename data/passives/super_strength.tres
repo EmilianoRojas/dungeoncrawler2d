@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SuperStrengthEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/passives/super_strength_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"super_strength"
+passive_name = "Super-strength"
+description = "Low accuracy skills deal bonus damage — the lower the accuracy, the higher the bonus (up to +50%)."
+trigger = "pre_damage_calc"

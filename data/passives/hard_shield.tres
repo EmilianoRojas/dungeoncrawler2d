@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="HardShieldEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/passives/hard_shield_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"hard_shield"
+passive_name = "Hard Shield"
+description = "Reduce incoming damage by 30% while your shield is active."
+trigger = "pre_damage_apply"

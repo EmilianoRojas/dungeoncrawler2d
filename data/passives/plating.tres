@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PlatingEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/passives/plating_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"plating"
+passive_name = "Plating"
+description = "+5 Defense at the start of every battle."
+trigger = "battle_start"
