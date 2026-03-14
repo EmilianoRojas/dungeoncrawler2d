@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EquipmentResource" load_steps=2 format=3 uid="uid://item_elven_bow"]
+
+[ext_resource type="Script" uid="uid://dqfrq3dh8d8uv" path="res://core/items/equipment_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"elven_bow"
+display_name = "Elven Bow"
+slot = 0
+rarity = "Common"
+icon_path = "res://data/assets/items/bow_03.png"
+equip_effects = []
+granted_skills = []
+passive_effects = []

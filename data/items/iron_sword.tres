@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EquipmentResource" load_steps=2 format=3 uid="uid://item_iron_sword"]
+
+[ext_resource type="Script" uid="uid://dqfrq3dh8d8uv" path="res://core/items/equipment_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"iron_sword"
+display_name = "Iron Sword"
+slot = 0
+rarity = "Common"
+icon_path = "res://data/assets/items/sword_01.png"
+equip_effects = []
+granted_skills = []
+passive_effects = []
