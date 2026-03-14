@@ -10,6 +10,7 @@ static func get_cost(tier: RuneResource.Tier) -> int:
 	match tier:
 		RuneResource.Tier.COMMON:    return 2
 		RuneResource.Tier.RARE:      return 4
+		RuneResource.Tier.EPIC:      return 5
 		RuneResource.Tier.LEGENDARY: return 6
 	return 2
 

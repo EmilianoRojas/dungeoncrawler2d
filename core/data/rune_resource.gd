@@ -1,7 +1,7 @@
 class_name RuneResource
 extends Resource
 
-enum Tier { COMMON, RARE, LEGENDARY }
+enum Tier { COMMON, RARE, EPIC, LEGENDARY }
 
 @export var id: StringName = &""
 @export var display_name: String = ""

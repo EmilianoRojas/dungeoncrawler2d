@@ -6,11 +6,13 @@ signal panel_closed
 const TIER_COLORS: Dictionary = {
 	RuneResource.Tier.COMMON:    Color(0.85, 0.85, 0.85),
 	RuneResource.Tier.RARE:      Color(0.4,  0.6,  1.0),
+	RuneResource.Tier.EPIC:      Color(1.0,  0.6,  0.2),
 	RuneResource.Tier.LEGENDARY: Color(1.0,  0.8,  0.2),
 }
 const TIER_LABELS: Dictionary = {
 	RuneResource.Tier.COMMON:    "C",
 	RuneResource.Tier.RARE:      "R",
+	RuneResource.Tier.EPIC:      "E",
 	RuneResource.Tier.LEGENDARY: "L",
 }
 

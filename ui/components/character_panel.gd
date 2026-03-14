@@ -122,9 +122,15 @@ func _build_ui() -> void:
 	vbox.add_child(equip_header)
 	
 	var slot_names = {
-		EquipmentSlot.Type.WEAPON: "⚔ Weapon",
-		EquipmentSlot.Type.ARMOR: "🛡 Armor",
-		EquipmentSlot.Type.HELMET: "🪖 Helmet",
+		EquipmentSlot.Type.WEAPON:   "⚔ Weapon",
+		EquipmentSlot.Type.ARMOR:    "🛡 Armor",
+		EquipmentSlot.Type.HELMET:   "🪖 Helmet",
+		EquipmentSlot.Type.SHIELD:   "🔰 Shield",
+		EquipmentSlot.Type.BOW:      "🏹 Bow",
+		EquipmentSlot.Type.GLOVES:   "🧤 Gloves",
+		EquipmentSlot.Type.BOOTS:    "👢 Boots",
+		EquipmentSlot.Type.RING:     "💍 Ring",
+		EquipmentSlot.Type.NECKLACE: "📿 Necklace",
 	}
 	
 	for slot in slot_names:

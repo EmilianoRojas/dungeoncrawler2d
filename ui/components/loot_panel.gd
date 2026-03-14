@@ -65,7 +65,18 @@ func _build_ui() -> void:
 	
 	# Separator
 	vbox.add_child(HSeparator.new())
-	
+
+	# Item icon (centered, pixel-art scaled)
+	if _item.icon_path != "":
+		var icon_center := CenterContainer.new()
+		var tex_rect := TextureRect.new()
+		tex_rect.texture = load(_item.icon_path) as Texture2D
+		tex_rect.custom_minimum_size = Vector2(96, 96)
+		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tex_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon_center.add_child(tex_rect)
+		vbox.add_child(icon_center)
+
 	# Item name (rarity-colored)
 	var name_label = Label.new()
 	name_label.text = _item.display_name
