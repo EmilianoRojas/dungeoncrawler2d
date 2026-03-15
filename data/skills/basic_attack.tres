@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="Skill" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="Skill" load_steps=5 format=3 uid="uid://su7c27ocheci"]
 
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
+[ext_resource type="Script" uid="uid://culub74taadkn" path="res://core/effects/effect_resource.gd" id="2_l4672"]
+[ext_resource type="Texture2D" uid="uid://c0iqjrvlis5hf" path="res://data/assets/skill_animations/round_sparkle_burst_001_small_blue/spritesheet.png" id="3_vfx"]
 [ext_resource type="Texture2D" uid="uid://dqmntlc1wadav" path="res://data/assets/Skills/Icon11.png" id="icon_tex"]
-[ext_resource type="Texture2D" path="res://data/assets/skill_animations/round_sparkle_burst_001_small_blue/spritesheet.png" id="3_vfx"]
 
 [resource]
 script = ExtResource("1_skill")
@@ -11,11 +12,15 @@ skill_type = 0
 scaling_type = 1
 scaling_stat = &"strength"
 scaling_percent = 1.0
-on_cast_effects = Array[Resource]([])
-on_hit_effects = Array[Resource]([])
+on_cast_effects = Array[ExtResource("2_l4672")]([])
+on_hit_effects = Array[ExtResource("2_l4672")]([])
 base_power = 5
 max_cooldown = 0
 hit_chance = 90
+ignores_shield = false
+is_self_heal = false
+is_observe = false
+skill_level = 1
 icon = ExtResource("icon_tex")
 vfx_spritesheet = ExtResource("3_vfx")
 vfx_frame_size = Vector2i(32, 32)
