@@ -4,6 +4,9 @@ extends Control
 signal impact_reached     # emitted when vfx_impact_frame is reached
 signal animation_finished # emitted when the full spritesheet animation is done
 
+var _active_tweens: Array[Tween] = []
+var _active_overlays: Array[Node] = []
+
 var _sprites: Dictionary = {}   # Entity -> TextureRect
 var _panels: Dictionary = {}    # Entity -> Control (used for floater positioning)
 var _game_ui: Control
@@ -79,6 +82,8 @@ func _play_spritesheet(skill: Skill, panel: Control) -> void:
 
 	# Animate frames
 	var tween := create_tween()
+	_active_tweens.append(tween)
+	_active_overlays.append(tex_rect)
 	for i in range(frame_count):
 		var atlas := AtlasTexture.new()
 		atlas.atlas = skill.vfx_spritesheet
@@ -94,8 +99,11 @@ func _play_spritesheet(skill: Skill, panel: Control) -> void:
 	tween.tween_property(tex_rect, "modulate:a", 0.0, frame_duration * 0.5)\
 		.set_delay(frame_count * frame_duration)
 	tween.tween_callback(func():
+		_active_tweens.erase(tween)
+		_active_overlays.erase(tex_rect)
 		animation_finished.emit()
-		tex_rect.queue_free
+		if is_instance_valid(tex_rect):
+			tex_rect.queue_free()
 	)
 
 # --- EventBus subscribers ---
@@ -208,6 +216,19 @@ func _spawn_floater(panel: Control, text: String, color: Color) -> void:
 	tween.tween_property(label, "position:y", start_y - 50.0, 0.8)
 	tween.tween_property(label, "modulate:a", 0.0, 0.8)
 	tween.chain().tween_callback(label.queue_free)
+
+## Cancel all active animations immediately (call on battle end).
+## Clears overlays and emits animation_finished so any pending awaits resolve.
+func cancel_vfx() -> void:
+	for tween in _active_tweens:
+		if tween and tween.is_valid():
+			tween.kill()
+	_active_tweens.clear()
+	for overlay in _active_overlays:
+		if is_instance_valid(overlay):
+			overlay.queue_free()
+	_active_overlays.clear()
+	animation_finished.emit()
 
 func _screen_flash(color: Color, alpha: float, duration: float) -> void:
 	var overlay = ColorRect.new()

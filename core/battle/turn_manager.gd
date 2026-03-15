@@ -20,6 +20,11 @@ var action_queue: ActionQueue
 var turn_count: int = 0
 var vfx_manager = null  # set by GameLoop after battle setup
 
+func set_vfx_manager(mgr) -> void:
+	vfx_manager = mgr
+	if vfx_manager:
+		battle_ended.connect(func(_result): vfx_manager.cancel_vfx())
+
 func _init() -> void:
 	action_queue = ActionQueue.new()
 	add_child(action_queue)

@@ -95,7 +95,7 @@ func _ready() -> void:
 	
 	turn_manager = TurnManager.new()
 	add_child(turn_manager)
-	turn_manager.vfx_manager = game_ui.vfx_manager
+	turn_manager.set_vfx_manager(game_ui.vfx_manager)
 
 	# 4. Connect Signals
 	turn_manager.turn_processing_end.connect(_on_battle_turn_end)
