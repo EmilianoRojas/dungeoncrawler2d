@@ -1,7 +1,8 @@
 class_name VFXManager
 extends Control
 
-signal impact_reached  # emitted when vfx_impact_frame is reached
+signal impact_reached     # emitted when vfx_impact_frame is reached
+signal animation_finished # emitted when the full spritesheet animation is done
 
 var _sprites: Dictionary = {}   # Entity -> TextureRect
 var _panels: Dictionary = {}    # Entity -> Control (used for floater positioning)
@@ -89,10 +90,13 @@ func _play_spritesheet(skill: Skill, panel: Control) -> void:
 				impact_reached.emit()
 		).set_delay(frame_index * frame_duration)
 
-	# Fade out and remove after last frame
+	# Fade out, emit animation_finished, and remove after last frame
 	tween.tween_property(tex_rect, "modulate:a", 0.0, frame_duration * 0.5)\
 		.set_delay(frame_count * frame_duration)
-	tween.tween_callback(tex_rect.queue_free)
+	tween.tween_callback(func():
+		animation_finished.emit()
+		tex_rect.queue_free
+	)
 
 # --- EventBus subscribers ---
 
