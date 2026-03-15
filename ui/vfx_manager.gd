@@ -80,8 +80,8 @@ func _play_spritesheet(skill: Skill, panel: Control) -> void:
 	var panel_rect := panel.get_global_rect()
 	tex_rect.position = panel_rect.get_center() - size / 2.0
 
-	# Animate frames
-	var tween := create_tween()
+	# Animate frames — parallel so all delays are absolute from t=0
+	var tween := create_tween().set_parallel(true)
 	_active_tweens.append(tween)
 	_active_overlays.append(tex_rect)
 	for i in range(frame_count):
@@ -95,16 +95,17 @@ func _play_spritesheet(skill: Skill, panel: Control) -> void:
 				impact_reached.emit()
 		).set_delay(frame_index * frame_duration)
 
-	# Fade out, emit animation_finished, and remove after last frame
+	# Fade out after last frame, then clean up
+	var total_time := frame_count * frame_duration
 	tween.tween_property(tex_rect, "modulate:a", 0.0, frame_duration * 0.5)\
-		.set_delay(frame_count * frame_duration)
+		.set_delay(total_time)
 	tween.tween_callback(func():
 		_active_tweens.erase(tween)
 		_active_overlays.erase(tex_rect)
 		animation_finished.emit()
 		if is_instance_valid(tex_rect):
 			tex_rect.queue_free()
-	)
+	).set_delay(total_time + frame_duration * 0.5)
 
 # --- EventBus subscribers ---
 
