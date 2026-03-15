@@ -89,7 +89,7 @@ func start_new_turn() -> void:
 			
 		# Trigger Passives: ON_TURN_START
 		if "passives" in e and e.passives:
-			var passives_list = e.passives.get_passives_by_trigger(EffectResource.Trigger.ON_TURN_START)
+			var passives_list = e.passives.get_passives_by_trigger("ON_TURN_START")
 			for p_data in passives_list:
 				var effect = p_data.effect
 				var source_id = p_data.source
@@ -176,7 +176,7 @@ func _process_resolution_phase() -> void:
 	# Trigger Passives: ON_TURN_END
 	for e in entities:
 		if "passives" in e and e.passives:
-			var passives_list = e.passives.get_passives_by_trigger(EffectResource.Trigger.ON_TURN_END)
+			var passives_list = e.passives.get_passives_by_trigger("ON_TURN_END")
 			for p_data in passives_list:
 				var effect = p_data.effect
 				var source_id = p_data.source

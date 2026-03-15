@@ -174,6 +174,7 @@ func initialize_battle(player: Entity, enemies: Array[Entity]) -> void:
 		vfx_manager.register_entity(enemies[0], enemy_sprite, $BattleContainer/EnemyInfo)
 
 	_populate_skills(player)
+	update_skill_cooldowns(player)
 	_setup_turn_indicators()
 
 func _setup_turn_indicators() -> void:

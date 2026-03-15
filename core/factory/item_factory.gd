@@ -130,7 +130,7 @@ static func _roll_rarity(dungeon_floor: int) -> int:
 static func _add_random_passive(item: EquipmentResource) -> void:
 	var passive_id = ITEM_PASSIVE_POOL[randi() % ITEM_PASSIVE_POOL.size()]
 	var passive_info = PassiveLibrary.get_passive(passive_id)
-	if passive_info.is_empty():
+	if passive_info == null:
 		return
 	# Store passive_id in item so EquipmentComponent can apply it
 	# We use a custom EffectResource with effect_id = "passive:<id>" as a marker
@@ -138,7 +138,7 @@ static func _add_random_passive(item: EquipmentResource) -> void:
 	marker.effect_id = StringName("passive:" + str(passive_id))
 	item.passive_effects.append(marker)
 	# Append passive name to display_name
-	item.display_name = item.display_name + " [" + passive_info.get("name", str(passive_id)) + "]"
+	item.display_name = item.display_name + " [" + passive_info.passive_name + "]"
 
 ## Force a minimum rarity (used for boss drops)
 static func bump_rarity(current_rarity: String) -> String:
