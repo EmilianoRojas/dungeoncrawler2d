@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="Skill" load_steps=4 format=3 uid="uid://enrage_skill"]
+[gd_resource type="Resource" script_class="Skill" load_steps=4 format=3]
 
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
-[ext_resource type="Resource" uid="uid://rage_effect" path="res://data/effects/rage.tres" id="2_effect"]
-[ext_resource type="Texture2D" path="res://data/assets/Icon1.png" id="icon_tex"]
+[ext_resource type="Resource" path="res://data/effects/rage.tres" id="2_effect"]
+[ext_resource type="Texture2D" uid="uid://drp21vwph8u7p" path="res://data/assets/Skills/Icon1.png" id="icon_tex"]
 
 [resource]
 script = ExtResource("1_skill")

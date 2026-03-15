@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="Skill" load_steps=4 format=3 uid="uid://fireball_skill"]
+[gd_resource type="Resource" script_class="Skill" load_steps=4 format=3]
 
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
-[ext_resource type="Resource" uid="uid://burn_dot_effect" path="res://data/effects/burn.tres" id="2_effect"]
-[ext_resource type="Texture2D" path="res://data/assets/Icon27.png" id="icon_tex"]
+[ext_resource type="Resource" path="res://data/effects/burn.tres" id="2_effect"]
+[ext_resource type="Texture2D" uid="uid://cs550jofpn1g0" path="res://data/assets/Skills/Icon27.png" id="icon_tex"]
 
 [resource]
 script = ExtResource("1_skill")
