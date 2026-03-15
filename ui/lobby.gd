@@ -85,8 +85,12 @@ func _load_res(path: String, type) -> Array:
 	dir.list_dir_begin()
 	var f := dir.get_next()
 	while f != "":
-		if f.ends_with(".tres"):
-			var r = load(path + f)
+		# On Android, Godot exports .tres as .tres.remap — strip it before loading
+		var base := f
+		if base.ends_with(".remap"):
+			base = base.left(base.length() - 6)
+		if base.ends_with(".tres"):
+			var r = load(path + base)
 			if is_instance_of(r, type):
 				out.append(r)
 		f = dir.get_next()
