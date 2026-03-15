@@ -163,12 +163,18 @@ func _process_resolution_phase() -> void:
 		# Visual Wait
 		await get_tree().create_timer(0.5).timeout
 
-		# VFX: cast animation + impact delay
+		# VFX: cast animation — wait for impact_reached signal or fallback timer
 		if vfx_manager:
 			var next_action = action_queue.peek_next()
-			var delay = vfx_manager.play_cast_vfx(next_action)
-			if delay > 0.0:
-				await get_tree().create_timer(delay).timeout
+			var skill = next_action.get("skill_reference") as Skill if next_action else null
+			var total_duration = vfx_manager.play_cast_vfx(next_action)
+
+			if skill and skill.vfx_spritesheet and skill.vfx_impact_frame > 0:
+				# Wait for the exact impact frame signal
+				await vfx_manager.impact_reached
+			elif total_duration > 0.0:
+				# Fallback: time-based delay
+				await get_tree().create_timer(total_duration).timeout
 
 		# Execute next
 		action_queue.process_next()

@@ -41,5 +41,15 @@ enum SkillType {
 
 # VFX
 @export var icon: Texture2D
-@export var impact_delay: float = 0.25  # seconds before damage applies
-@export var vfx_color: Color = Color.WHITE  # cast animation tint
+@export var vfx_spritesheet: Texture2D          # spritesheet PNG
+@export var vfx_frame_size: Vector2i = Vector2i(64, 64)  # size of each frame
+@export var vfx_fps: float = 12.0               # playback speed
+@export var vfx_impact_frame: int = 0           # frame at which damage/buff applies
+@export var vfx_on_target: bool = true          # true = plays on target, false = on caster
+@export var vfx_color: Color = Color.WHITE      # tint (used for flash fallback)
+
+# Derived: impact delay in seconds (auto-calculated from vfx_impact_frame / vfx_fps)
+func get_impact_delay() -> float:
+	if vfx_fps > 0.0:
+		return vfx_impact_frame / vfx_fps
+	return 0.0

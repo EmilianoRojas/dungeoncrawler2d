@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="Skill" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="Skill" load_steps=4 format=3]
 
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
 [ext_resource type="Texture2D" uid="uid://dqmntlc1wadav" path="res://data/assets/Skills/Icon11.png" id="icon_tex"]
+[ext_resource type="Texture2D" path="res://data/assets/skill_animations/round_sparkle_burst_001_small_blue/spritesheet.png" id="3_vfx"]
 
 [resource]
 script = ExtResource("1_skill")
@@ -16,5 +17,9 @@ base_power = 5
 max_cooldown = 0
 hit_chance = 90
 icon = ExtResource("icon_tex")
-impact_delay = 0.2
+vfx_spritesheet = ExtResource("3_vfx")
+vfx_frame_size = Vector2i(32, 32)
+vfx_fps = 12.0
+vfx_impact_frame = 6
+vfx_on_target = true
 vfx_color = Color(1, 0.8, 0.6, 1)

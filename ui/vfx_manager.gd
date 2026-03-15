@@ -1,6 +1,8 @@
 class_name VFXManager
 extends Control
 
+signal impact_reached  # emitted when vfx_impact_frame is reached
+
 var _sprites: Dictionary = {}   # Entity -> TextureRect
 var _panels: Dictionary = {}    # Entity -> Control (used for floater positioning)
 var _game_ui: Control
@@ -19,17 +21,78 @@ func register_entity(entity: Entity, sprite: TextureRect, panel: Control) -> voi
 	_panels[entity] = panel
 
 # Called by TurnManager before processing each action.
-# Flashes the source sprite in the skill's vfx_color and returns impact_delay.
+# If skill has a spritesheet, plays the animation and emits impact_reached at the right frame.
+# If not, falls back to color flash. Returns total animation duration (for post-anim wait).
 func play_cast_vfx(action: Action) -> float:
 	if not action:
 		return 0.0
 	var skill = action.get("skill_reference") as Skill
 	if not skill:
 		return 0.0
+
+	# Flash caster sprite always
 	var source = action.source
 	if source and _sprites.has(source):
-		_flash_modulate(_sprites[source], skill.vfx_color, skill.impact_delay)
-	return skill.impact_delay
+		_flash_modulate(_sprites[source], skill.vfx_color, 0.25)
+
+	# Spritesheet animation
+	if skill.vfx_spritesheet:
+		var target_entity = action.get("target") if skill.vfx_on_target else source
+		var target_panel: Control = _panels.get(target_entity)
+		if target_panel:
+			_play_spritesheet(skill, target_panel)
+			# Total duration of the animation
+			var frame_count = _get_frame_count(skill)
+			return frame_count / skill.vfx_fps
+		return skill.get_impact_delay()
+
+	# Fallback: use impact frame timing without animation
+	return skill.get_impact_delay()
+
+func _get_frame_count(skill: Skill) -> int:
+	if not skill.vfx_spritesheet:
+		return 0
+	var sheet_width = skill.vfx_spritesheet.get_width()
+	return sheet_width / skill.vfx_frame_size.x
+
+func _play_spritesheet(skill: Skill, panel: Control) -> void:
+	var frame_count := _get_frame_count(skill)
+	if frame_count <= 0:
+		return
+
+	var frame_duration := 1.0 / skill.vfx_fps
+	var size := Vector2(skill.vfx_frame_size)
+
+	# Create overlay TextureRect centered on panel
+	var tex_rect := TextureRect.new()
+	tex_rect.custom_minimum_size = size
+	tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tex_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tex_rect.z_index = 20
+	add_child(tex_rect)
+
+	# Position centered over panel
+	var panel_rect := panel.get_global_rect()
+	tex_rect.position = panel_rect.get_center() - size / 2.0
+
+	# Animate frames
+	var tween := create_tween()
+	for i in range(frame_count):
+		var atlas := AtlasTexture.new()
+		atlas.atlas = skill.vfx_spritesheet
+		atlas.region = Rect2(i * skill.vfx_frame_size.x, 0, skill.vfx_frame_size.x, skill.vfx_frame_size.y)
+		var frame_index := i
+		tween.tween_callback(func():
+			tex_rect.texture = atlas
+			if frame_index == skill.vfx_impact_frame:
+				impact_reached.emit()
+		).set_delay(frame_index * frame_duration)
+
+	# Fade out and remove after last frame
+	tween.tween_property(tex_rect, "modulate:a", 0.0, frame_duration * 0.5)\
+		.set_delay(frame_count * frame_duration)
+	tween.tween_callback(tex_rect.queue_free)
 
 # --- EventBus subscribers ---
 
