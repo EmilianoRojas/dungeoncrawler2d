@@ -56,6 +56,10 @@ var _rune_panel: RunePanel = null
 var _player_turn_indicator: Label = null
 var _enemy_turn_indicator: Label = null
 
+# Status effect bars
+var _player_status_bar: StatusEffectBar = null
+var _enemy_status_bar: StatusEffectBar = null
+
 # Skill tooltip
 var _skill_tooltip: Control = null
 var _tooltip_hide_timer: Timer = null
@@ -176,6 +180,33 @@ func initialize_battle(player: Entity, enemies: Array[Entity]) -> void:
 	_populate_skills(player)
 	update_skill_cooldowns(player)
 	_setup_turn_indicators()
+	_setup_status_bars(player, enemies)
+
+func _setup_status_bars(player: Entity, enemies: Array[Entity]) -> void:
+	# Clear existing bars
+	if _player_status_bar:
+		_player_status_bar.queue_free()
+	if _enemy_status_bar:
+		_enemy_status_bar.queue_free()
+
+	# Player status bar — under HP bars inside PlayerInfo VBox
+	_player_status_bar = StatusEffectBar.new()
+	_player_status_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	$BattleContainer/PlayerInfo.add_child(_player_status_bar)
+
+	# Enemy status bar — under HP bars inside EnemyInfo VBox
+	_enemy_status_bar = StatusEffectBar.new()
+	_enemy_status_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	$BattleContainer/EnemyInfo.add_child(_enemy_status_bar)
+
+	# Initial refresh
+	update_status_effects(player, enemies)
+
+func update_status_effects(player: Entity, enemies: Array[Entity]) -> void:
+	if _player_status_bar:
+		_player_status_bar.refresh(player)
+	if _enemy_status_bar:
+		_enemy_status_bar.refresh(enemies[0] if enemies.size() > 0 else null)
 
 func _setup_turn_indicators() -> void:
 	# Remove old indicators if reinitializing

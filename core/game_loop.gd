@@ -295,10 +295,17 @@ func _try_drop_rune() -> void:
 
 func _on_turn_phase_changed(new_phase: TurnManager.Phase) -> void:
 	game_ui.set_turn_phase(new_phase)
+	_refresh_status_bars()
 
 func _on_battle_turn_end() -> void:
 	# Update skill cooldown display (and wait button visibility) after each turn
 	game_ui.update_skill_cooldowns(player_entity)
+	_refresh_status_bars()
+
+func _refresh_status_bars() -> void:
+	var enemy := turn_manager.get_first_alive_enemy() if turn_manager else null
+	var enemies: Array[Entity] = [enemy] if enemy else []
+	game_ui.update_status_effects(player_entity, enemies)
 
 func _on_battle_ended(result: TurnManager.Phase) -> void:
 	# Clean up passives from battle
