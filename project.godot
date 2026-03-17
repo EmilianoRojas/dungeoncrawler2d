@@ -23,17 +23,16 @@ RuneManager="*res://core/systems/rune_manager.gd"
 CurrencyManager="*res://core/systems/currency_manager.gd"
 PlayerProfile="*res://core/meta/player_profile.gd"
 
-[dotnet]
-
-project/assembly_name="DungeonCrawler2d"
-
 [display]
 
 window/size/viewport_width=720
 window/size/viewport_height=1280
-window/handheld/orientation=1
 window/stretch/mode="viewport"
-window/stretch/aspect="keep"
+window/handheld/orientation=1
+
+[dotnet]
+
+project/assembly_name="DungeonCrawler2d"
 
 [rendering]
 

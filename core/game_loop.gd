@@ -304,7 +304,9 @@ func _on_battle_turn_end() -> void:
 
 func _refresh_status_bars() -> void:
 	var enemy := turn_manager.get_first_alive_enemy() if turn_manager else null
-	var enemies: Array[Entity] = [enemy] if enemy else []
+	var enemies: Array[Entity] = []
+	if enemy:
+		enemies.append(enemy)
 	game_ui.update_status_effects(player_entity, enemies)
 
 func _on_battle_ended(result: TurnManager.Phase) -> void:
@@ -409,11 +411,14 @@ func _process_loot_queue() -> void:
 	_log("Found: %s [%s]" % [item.display_name, item.rarity])
 	game_ui.show_loot_panel(item, current_equipped, dungeon_manager.current_floor)
 
-func _on_loot_decision(equip: bool) -> void:
+func _on_loot_decision(equip: bool, item: EquipmentResource = null) -> void:
 	if _pending_loot.is_empty():
 		return
-	
-	var item = _pending_loot.pop_front()
+
+	_pending_loot.pop_front()  # always advance the queue
+	# use the item the panel was showing (may differ from original if rerolled)
+	if item == null:
+		return
 	if equip:
 		if player_entity.equipment:
 			player_entity.equipment.equip(item)

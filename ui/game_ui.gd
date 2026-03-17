@@ -6,7 +6,7 @@ signal skill_activated(skill: Skill)
 signal room_selected(index: int)
 signal skill_draft_choice(action: String, slot_index: int)
 signal camp_action_chosen(action: String)
-signal loot_decision(equip: bool)
+signal loot_decision(equip: bool, item: EquipmentResource)
 signal wait_turn_pressed
 signal rune_panel_requested
 
@@ -544,8 +544,9 @@ func show_loot_panel(item: EquipmentResource, current_equipped: EquipmentResourc
 	add_child(_loot_panel)
 
 func _on_loot_choice(equip: bool) -> void:
+	var item = _loot_panel._item if _loot_panel else null
 	_close_loot_panel()
-	loot_decision.emit(equip)
+	loot_decision.emit(equip, item)
 
 func _close_loot_panel() -> void:
 	if _loot_panel:
