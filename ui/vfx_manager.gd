@@ -7,9 +7,12 @@ signal animation_finished # emitted when the full spritesheet animation is done
 var _active_tweens: Array[Tween] = []
 var _active_overlays: Array[Node] = []
 
-var _sprites: Dictionary = {}   # Entity -> TextureRect
-var _panels: Dictionary = {}    # Entity -> Control (used for floater positioning)
+var _sprites: Dictionary = {}         # Entity -> TextureRect
+var _panels: Dictionary = {}          # Entity -> Control (used for floater positioning)
+var _flash_materials: Dictionary = {}  # Entity -> ShaderMaterial
 var _game_ui: Control
+
+const SPRITE_SHADER = preload("res://ui/shaders/sprite.gdshader")
 
 func setup(game_ui: Control) -> void:
 	_game_ui = game_ui
@@ -19,10 +22,17 @@ func setup(game_ui: Control) -> void:
 func clear_entities() -> void:
 	_sprites.clear()
 	_panels.clear()
+	_flash_materials.clear()
 
 func register_entity(entity: Entity, sprite: TextureRect, panel: Control) -> void:
 	_sprites[entity] = sprite
 	_panels[entity] = panel
+	# Attach shader for hit flash + idle scale pulse
+	var mat := ShaderMaterial.new()
+	mat.shader = SPRITE_SHADER
+	mat.set_shader_parameter("flash_amount", 0.0)
+	sprite.material = mat
+	_flash_materials[entity] = mat
 
 # Called by TurnManager before processing each action.
 # If skill has a spritesheet, plays the animation and emits impact_reached at the right frame.
@@ -67,45 +77,51 @@ func _play_spritesheet(skill: Skill, panel: Control) -> void:
 	var frame_duration := 1.0 / skill.vfx_fps
 	var size := Vector2(skill.vfx_frame_size)
 
-	# Create overlay TextureRect centered on panel
-	var tex_rect := TextureRect.new()
-	tex_rect.custom_minimum_size = size
-	tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	tex_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	tex_rect.z_index = 20
-	add_child(tex_rect)
-
-	# Position centered over panel
-	var panel_rect := panel.get_global_rect()
-	tex_rect.position = panel_rect.get_center() - size / 2.0
-
-	# Animate frames — parallel so all delays are absolute from t=0
-	var tween := create_tween().set_parallel(true)
-	_active_tweens.append(tween)
-	_active_overlays.append(tex_rect)
+	# Pre-build all atlas frames
+	var frames: Array[AtlasTexture] = []
 	for i in range(frame_count):
 		var atlas := AtlasTexture.new()
 		atlas.atlas = skill.vfx_spritesheet
 		atlas.region = Rect2(i * skill.vfx_frame_size.x, 0, skill.vfx_frame_size.x, skill.vfx_frame_size.y)
-		var frame_index := i
+		frames.append(atlas)
+
+	# Create overlay TextureRect — size must be set explicitly (not inside a Container)
+	var tex_rect := TextureRect.new()
+	tex_rect.size = size
+	tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tex_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tex_rect.z_index = 100
+	tex_rect.texture = frames[0]
+	add_child(tex_rect)
+
+	# Position centered over panel (global rect matches VFXManager's local space)
+	var panel_center := panel.get_global_rect().get_center()
+	tex_rect.position = panel_center - size / 2.0
+
+	_active_overlays.append(tex_rect)
+
+	# Sequential tween: advance one frame at a time
+	var tween := create_tween()
+	_active_tweens.append(tween)
+	for i in range(frame_count):
+		var fi := i
 		tween.tween_callback(func():
-			tex_rect.texture = atlas
-			if frame_index == skill.vfx_impact_frame:
+			if is_instance_valid(tex_rect):
+				tex_rect.texture = frames[fi]
+			if fi == skill.vfx_impact_frame:
 				impact_reached.emit()
-		).set_delay(frame_index * frame_duration)
+		).set_delay(0.0 if i == 0 else frame_duration)
 
 	# Fade out after last frame, then clean up
-	var total_time := frame_count * frame_duration
-	tween.tween_property(tex_rect, "modulate:a", 0.0, frame_duration * 0.5)\
-		.set_delay(total_time)
+	tween.tween_property(tex_rect, "modulate:a", 0.0, frame_duration * 0.5)
 	tween.tween_callback(func():
 		_active_tweens.erase(tween)
 		_active_overlays.erase(tex_rect)
 		animation_finished.emit()
 		if is_instance_valid(tex_rect):
 			tex_rect.queue_free()
-	).set_delay(total_time + frame_duration * 0.5)
+	)
 
 # --- EventBus subscribers ---
 
@@ -132,9 +148,8 @@ func on_damage_dealt(data: Dictionary) -> void:
 		if target_panel:
 			_spawn_floater(target_panel, "⚡-%d CRIT!" % damage, Color(1, 0.85, 0.1))
 	else:
-		if target_sprite:
-			_flash_modulate(target_sprite, Color(1, 0.2, 0.2), 0.3)
-			_pulse_scale(target_sprite, 1.1, 0.3)
+		if target and _flash_materials.has(target):
+			_shader_double_flash(_flash_materials[target], 0.12)
 		if target_panel:
 			_spawn_floater(target_panel, "-%d" % damage, Color(1, 0.35, 0.35))
 
@@ -187,6 +202,15 @@ func _flash_modulate(node: CanvasItem, color: Color, duration: float) -> void:
 	var tween = create_tween()
 	tween.tween_property(node, "modulate", color, duration * 0.35)
 	tween.tween_property(node, "modulate", original, duration * 0.65)
+
+func _shader_double_flash(mat: ShaderMaterial, duration: float) -> void:
+	if not mat:
+		return
+	var tween := create_tween()
+	tween.tween_method(func(v: float): mat.set_shader_parameter("flash_amount", v), 0.0, 1.0, duration * 0.25)
+	tween.tween_method(func(v: float): mat.set_shader_parameter("flash_amount", v), 1.0, 0.0, duration * 0.25)
+	tween.tween_method(func(v: float): mat.set_shader_parameter("flash_amount", v), 0.0, 1.0, duration * 0.25)
+	tween.tween_method(func(v: float): mat.set_shader_parameter("flash_amount", v), 1.0, 0.0, duration * 0.25)
 
 func _pulse_scale(node: Control, factor: float, duration: float) -> void:
 	if not is_instance_valid(node):

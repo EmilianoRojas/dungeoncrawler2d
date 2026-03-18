@@ -29,7 +29,9 @@ static func generate_enemy_loot(dungeon_floor: int, is_elite: bool = false, is_b
 	
 	# Generate a random item
 	var item = ItemFactory.generate_random_item(dungeon_floor)
-	
+	if not item:
+		return rewards  # item library empty — return no drop
+
 	# Boss drops get +1 rarity tier
 	if is_boss:
 		item.rarity = ItemFactory.bump_rarity(item.rarity)
@@ -51,12 +53,14 @@ static func generate_chest_loot(dungeon_floor: int) -> Array[RewardResource]:
 	
 	# First item (guaranteed)
 	var item1 = ItemFactory.generate_random_item(dungeon_floor)
-	rewards.append(_wrap_equipment(item1))
-	
+	if item1:
+		rewards.append(_wrap_equipment(item1))
+
 	# 30% chance of a second item
 	if randf() < 0.30:
 		var item2 = ItemFactory.generate_random_item(dungeon_floor)
-		rewards.append(_wrap_equipment(item2))
+		if item2:
+			rewards.append(_wrap_equipment(item2))
 	
 	return rewards
 

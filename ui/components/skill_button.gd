@@ -6,6 +6,7 @@ signal tooltip_requested(skill: Skill, global_pos: Vector2)
 const HOLD_SECONDS := 0.40
 
 var skill_reference: Skill
+var _interactable: bool = true
 
 var _cd_label: Label
 var _hold_timer: Timer
@@ -55,10 +56,19 @@ func update_cooldown(current_cd: int) -> void:
 			_cd_label.text = str(current_cd)
 			_cd_label.visible = true
 	else:
-		disabled = false
-		modulate = Color.WHITE
+		# Only re-enable if the turn system also allows interaction
+		disabled = not _interactable
+		modulate = Color.WHITE if _interactable else Color(0.6, 0.6, 0.6, 1.0)
 		if _cd_label:
 			_cd_label.visible = false
+
+func set_interactable(enabled: bool) -> void:
+	_interactable = enabled
+	# Only touch disabled if not already locked by a cooldown
+	var on_cd = skill_reference and _cd_label and _cd_label.visible
+	if not on_cd:
+		disabled = not enabled
+		modulate = Color.WHITE if enabled else Color(0.6, 0.6, 0.6, 1.0)
 
 # ── Long-press detection ───────────────────────────────────────────────────────
 func _gui_input(event: InputEvent) -> void:

@@ -363,7 +363,6 @@ func _process_combat_loot(is_final_boss: bool = false) -> void:
 	var dungeon_floor = dungeon_manager.current_floor
 	
 	var rewards = LootSystem.generate_enemy_loot(dungeon_floor, is_elite, is_boss)
-	"res://data/skills/backstab.tres"
 	if rewards.is_empty():
 		_log("No loot dropped.")
 		_finish_loot_phase()
@@ -418,6 +417,7 @@ func _on_loot_decision(equip: bool, item: EquipmentResource = null) -> void:
 	_pending_loot.pop_front()  # always advance the queue
 	# use the item the panel was showing (may differ from original if rerolled)
 	if item == null:
+		_process_loot_queue()  # keep the queue moving even on null item
 		return
 	if equip:
 		if player_entity.equipment:

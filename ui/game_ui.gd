@@ -179,6 +179,7 @@ func initialize_battle(player: Entity, enemies: Array[Entity]) -> void:
 
 	_populate_skills(player)
 	update_skill_cooldowns(player)
+	set_skills_interactable(false)
 	_setup_turn_indicators()
 	_setup_status_bars(player, enemies)
 
@@ -247,9 +248,11 @@ func set_turn_phase(phase: int) -> void: # phase: TurnManager.Phase
 		1: # DECISION — player is choosing
 			_player_turn_indicator.visible = true
 			_enemy_turn_indicator.visible = false
-		_: # WAITING, RESOLUTION, WIN, LOSS — hide both while animations play
+			set_skills_interactable(true)
+		_: # WAITING, RESOLUTION, WIN, LOSS — disable buttons while processing
 			_player_turn_indicator.visible = false
 			_enemy_turn_indicator.visible = false
+			set_skills_interactable(false)
 
 func update_hp(entity: Entity, is_player: bool) -> void:
 	if not entity.stats: return
@@ -314,6 +317,13 @@ func update_skill_cooldowns(player: Entity) -> void:
 	# Show/hide wait button
 	if _wait_button:
 		_wait_button.visible = not any_ready
+
+func set_skills_interactable(enabled: bool) -> void:
+	for child in skill_container.get_children():
+		if child is SkillButton:
+			(child as SkillButton).set_interactable(enabled)
+		elif child is Button:
+			child.disabled = not enabled
 
 # --- Skill tooltip ---
 
@@ -536,7 +546,8 @@ func _close_camp_menu() -> void:
 
 func show_loot_panel(item: EquipmentResource, current_equipped: EquipmentResource = null, dungeon_floor: int = 1) -> void:
 	_close_loot_panel()
-	
+	room_selector.visible = false
+
 	_loot_panel = LootPanel.new()
 	_loot_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_loot_panel.setup(item, current_equipped, dungeon_floor)
