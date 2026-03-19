@@ -4,6 +4,7 @@
 [ext_resource type="Resource" path="res://data/effects/burn.tres" id="2_effect"]
 [ext_resource type="Texture2D" uid="uid://cs550jofpn1g0" path="res://data/assets/Skills/Icon27.png" id="icon_tex"]
 
+[ext_resource type="Texture2D" path="res://data/assets/skill_animations/epic_explosion_001_small_orange/spritesheet.png" id="vfx_epic_exp"]
 [resource]
 script = ExtResource("1_skill")
 skill_name = "Fireball"
@@ -18,4 +19,9 @@ max_cooldown = 4
 hit_chance = 80
 icon = ExtResource("icon_tex")
 impact_delay = 0.5
-vfx_color = Color(1, 0.4, 0.0, 1)
+vfx_spritesheet = ExtResource("vfx_epic_exp")
+vfx_frame_size = Vector2i(64, 64)
+vfx_fps = 12.0
+vfx_impact_frame = 5
+vfx_on_target = true
+vfx_color = Color(1, 0.45, 0.1, 1)

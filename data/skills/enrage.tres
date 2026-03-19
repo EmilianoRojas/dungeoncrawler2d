@@ -4,6 +4,7 @@
 [ext_resource type="Resource" path="res://data/effects/rage.tres" id="2_effect"]
 [ext_resource type="Texture2D" uid="uid://drp21vwph8u7p" path="res://data/assets/Skills/Icon1.png" id="icon_tex"]
 
+[ext_resource type="Texture2D" path="res://data/assets/skill_animations/spell_attack_up_001_small_red/spritesheet.png" id="vfx_spell_at"]
 [resource]
 script = ExtResource("1_skill")
 skill_name = "Enrage"
@@ -18,4 +19,9 @@ max_cooldown = 5
 hit_chance = 100
 icon = ExtResource("icon_tex")
 impact_delay = 0.35
+vfx_spritesheet = ExtResource("vfx_spell_at")
+vfx_frame_size = Vector2i(64, 64)
+vfx_fps = 12.0
+vfx_impact_frame = 8
+vfx_on_target = false
 vfx_color = Color(1, 0.2, 0.2, 1)

@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
 [ext_resource type="Texture2D" uid="uid://mjbwr7mn1403" path="res://data/assets/Skills/Icon31.png" id="icon_tex"]
 
+[ext_resource type="Texture2D" path="res://data/assets/skill_animations/lightning_burst_001_small_violet/spritesheet.png" id="vfx_lightnin"]
 [resource]
 script = ExtResource("1_skill")
 skill_name = "Quick Slash"
@@ -17,4 +18,9 @@ max_cooldown = 0
 hit_chance = 95
 icon = ExtResource("icon_tex")
 impact_delay = 0.15
-vfx_color = Color(0.6, 1, 0.45, 1)
+vfx_spritesheet = ExtResource("vfx_lightnin")
+vfx_frame_size = Vector2i(32, 32)
+vfx_fps = 14.0
+vfx_impact_frame = 3
+vfx_on_target = true
+vfx_color = Color(0.7, 0.5, 1, 1)

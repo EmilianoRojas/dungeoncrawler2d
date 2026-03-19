@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
 [ext_resource type="Texture2D" uid="uid://d3plg6xh08tiy" path="res://data/assets/Skills/Icon34.png" id="icon_tex"]
 
+[ext_resource type="Texture2D" path="res://data/assets/skill_animations/stylized_explosion_002_small_violet/spritesheet.png" id="vfx_stylized"]
 [resource]
 script = ExtResource("1_skill")
 skill_name = "Tornado Slash"
@@ -17,4 +18,9 @@ max_cooldown = 5
 hit_chance = 50
 icon = ExtResource("icon_tex")
 impact_delay = 0.4
+vfx_spritesheet = ExtResource("vfx_stylized")
+vfx_frame_size = Vector2i(48, 48)
+vfx_fps = 12.0
+vfx_impact_frame = 4
+vfx_on_target = true
 vfx_color = Color(0.4, 0.85, 1, 1)

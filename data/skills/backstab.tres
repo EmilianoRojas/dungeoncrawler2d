@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://culub74taadkn" path="res://core/effects/effect_resource.gd" id="1_w25cv"]
 [ext_resource type="Texture2D" uid="uid://c0023j42jv0xg" path="res://data/assets/Skills/Icon4.png" id="icon_tex"]
 
+[ext_resource type="Texture2D" path="res://data/assets/skill_animations/directional_impact_001_small_blue/spritesheet.png" id="vfx_directio"]
 [resource]
 script = ExtResource("1_skill")
 skill_name = "Backstab"
@@ -22,4 +23,9 @@ is_observe = false
 skill_level = 1
 icon = ExtResource("icon_tex")
 impact_delay = 0.2
-vfx_color = Color(0.5, 0.9, 0.5, 1)
+vfx_spritesheet = ExtResource("vfx_directio")
+vfx_frame_size = Vector2i(32, 32)
+vfx_fps = 12.0
+vfx_impact_frame = 3
+vfx_on_target = true
+vfx_color = Color(0.3, 0.5, 1, 1)

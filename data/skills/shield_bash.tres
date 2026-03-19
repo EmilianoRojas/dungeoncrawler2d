@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cjspqx2a0nho7" path="res://core/combat/skill.gd" id="1_skill"]
 [ext_resource type="Texture2D" uid="uid://m74gqkhepanx" path="res://data/assets/Skills/Icon10.png" id="icon_tex"]
 
+[ext_resource type="Texture2D" path="res://data/assets/skill_animations/symmetrical_impact_001_small_yellow/spritesheet.png" id="vfx_symmetri"]
 [resource]
 script = ExtResource("1_skill")
 skill_name = "Shield Bash"
@@ -17,4 +18,9 @@ max_cooldown = 3
 hit_chance = 85
 icon = ExtResource("icon_tex")
 impact_delay = 0.3
+vfx_spritesheet = ExtResource("vfx_symmetri")
+vfx_frame_size = Vector2i(48, 48)
+vfx_fps = 12.0
+vfx_impact_frame = 3
+vfx_on_target = true
 vfx_color = Color(0.7, 0.75, 1, 1)
