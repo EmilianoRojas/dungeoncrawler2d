@@ -45,14 +45,23 @@ func play_windup(action: Action) -> void:
 	if not is_instance_valid(sprite):
 		return
 
-	# Player nudges right (+x toward enemy), enemy nudges left (-x toward player)
-	var dir := 1.0 if source.team == Entity.Team.PLAYER else -1.0
-	var nudge := 18.0 * dir
-	var origin_x := sprite.position.x
+	var skill := action.get("skill_reference") as Skill
+	var is_buff := skill and not skill.vfx_on_target
 
 	var tween := create_tween()
-	tween.tween_property(sprite, "position:x", origin_x + nudge, 0.10).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	tween.tween_property(sprite, "position:x", origin_x,         0.08).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+
+	if is_buff:
+		# Self-cast / buff: rise upward slightly, like charging up power
+		var origin_y := sprite.position.y
+		tween.tween_property(sprite, "position:y", origin_y - 10.0, 0.12).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
+		tween.tween_property(sprite, "position:y", origin_y,         0.10).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)
+	else:
+		# Attack: lunge toward enemy on x axis
+		var dir := 1.0 if source.team == Entity.Team.PLAYER else -1.0
+		var origin_x := sprite.position.x
+		tween.tween_property(sprite, "position:x", origin_x + 18.0 * dir, 0.10).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+		tween.tween_property(sprite, "position:x", origin_x,               0.08).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+
 	await tween.finished
 
 # Called by TurnManager before processing each action.
