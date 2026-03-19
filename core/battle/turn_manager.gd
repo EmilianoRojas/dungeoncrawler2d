@@ -172,6 +172,7 @@ func _process_resolution_phase() -> void:
 		if vfx_manager:
 			var next_action = action_queue.peek_next()
 			var skill = next_action.get("skill_reference") as Skill if next_action else null
+			await vfx_manager.play_windup(next_action)
 			var total_duration = vfx_manager.play_cast_vfx(next_action)
 
 			if skill and skill.vfx_spritesheet:

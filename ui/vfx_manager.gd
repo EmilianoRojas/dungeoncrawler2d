@@ -34,6 +34,27 @@ func register_entity(entity: Entity, sprite: TextureRect, panel: Control) -> voi
 	sprite.material = mat
 	_flash_materials[entity] = mat
 
+# Called by TurnManager before play_cast_vfx — sprite lunges toward the enemy then snaps back.
+func play_windup(action: Action) -> void:
+	if not action:
+		return
+	var source = action.source
+	if not source or not _sprites.has(source):
+		return
+	var sprite := _sprites[source] as TextureRect
+	if not is_instance_valid(sprite):
+		return
+
+	# Player nudges right (+x toward enemy), enemy nudges left (-x toward player)
+	var dir := 1.0 if source.team == Entity.Team.PLAYER else -1.0
+	var nudge := 18.0 * dir
+	var origin_x := sprite.position.x
+
+	var tween := create_tween()
+	tween.tween_property(sprite, "position:x", origin_x + nudge, 0.10).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(sprite, "position:x", origin_x,         0.08).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	await tween.finished
+
 # Called by TurnManager before processing each action.
 # If skill has a spritesheet, plays the animation and emits impact_reached at the right frame.
 # If not, falls back to color flash. Returns total animation duration (for post-anim wait).
