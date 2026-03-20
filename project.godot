@@ -25,11 +25,12 @@ PlayerProfile="*res://core/meta/player_profile.gd"
 
 [display]
 
-window/size/viewport_width=720
-window/size/viewport_height=1280
+window/size/viewport_width=360
+window/size/viewport_height=640
 window/handheld/orientation=1
-window/stretch/mode="canvas_items"
+window/stretch/mode="viewport"
 window/stretch/aspect="keep"
+window/stretch/scale_mode="integer"
 
 [dotnet]
 
@@ -41,3 +42,8 @@ textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
+
+[gui]
+
+theme/custom_font="res://data/assets/fonts/PressStart2P.ttf"
+theme/custom_font_size=8
