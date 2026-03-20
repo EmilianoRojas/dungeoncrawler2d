@@ -65,6 +65,12 @@ var _skill_tooltip: Control = null
 var _tooltip_hide_timer: Timer = null
 
 func _ready() -> void:
+	# Tiled background pattern
+	UIStyle.apply_background(self)
+
+	# Style the log panel
+	UIStyle.apply_panel($Panel)
+
 	# Initialize Room Selector
 	room_selector = ROOM_SELECTOR_SCENE.instantiate()
 	add_child(room_selector)
@@ -331,16 +337,7 @@ func _show_skill_tooltip(skill: Skill, btn_gpos: Vector2) -> void:
 	_hide_skill_tooltip()
 
 	var panel := PanelContainer.new()
-	var sty := StyleBoxFlat.new()
-	sty.bg_color    = Color(0.06, 0.06, 0.10, 0.96)
-	sty.border_color = Color(0.55, 0.45, 0.80)
-	sty.set_border_width_all(2)
-	sty.set_corner_radius_all(8)
-	sty.content_margin_left   = 14
-	sty.content_margin_right  = 14
-	sty.content_margin_top    = 10
-	sty.content_margin_bottom = 10
-	panel.add_theme_stylebox_override("panel", sty)
+	UIStyle.apply_panel(panel)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var vb := VBoxContainer.new()
