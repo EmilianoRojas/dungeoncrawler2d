@@ -8,22 +8,22 @@ var is_shield: bool = false
 const UI_PATH := "res://data/assets/ui/"
 
 func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_apply_texture_style()
 
 func _apply_texture_style() -> void:
-	# Background: dark interior matching the frame's inner color
+	# Background: dark interior matching the panel interior color
 	var bg := StyleBoxFlat.new()
 	bg.bg_color = Color(0.12, 0.07, 0.10, 1.0)
 	bg.set_content_margin_all(4.0)
 	add_theme_stylebox_override("background", bg)
 
-	# Fill: pixel art color strip stretched to fit interior
+	# Fill: pixel art color strip
 	var fill := StyleBoxTexture.new()
 	fill.texture = load(UI_PATH + ("ValueBlue_120x8.png" if is_shield else "ValueRed_120x8.png"))
-	fill.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_theme_stylebox_override("fill", fill)
 
-	# Frame overlay (NinePatchRect) drawn on top of everything
+	# Frame: NinePatchRect overlay drawn on top of the fill
 	if not has_node("Frame"):
 		var frame := NinePatchRect.new()
 		frame.name = "Frame"
@@ -55,8 +55,6 @@ func update_health_animated(current: int, max_val: int, duration: float = 0.3) -
 
 func set_as_shield() -> void:
 	is_shield = true
-	# Re-apply with shield (blue) fill
 	var fill := StyleBoxTexture.new()
 	fill.texture = load(UI_PATH + "ValueBlue_120x8.png")
-	fill.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_theme_stylebox_override("fill", fill)
