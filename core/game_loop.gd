@@ -20,6 +20,7 @@ const UI_SCENE = preload("res://ui/game_ui.tscn")
 
 # Skill Draft state
 var _pending_skill_offer: Skill = null
+var _runes_unlocked_this_run: Array[StringName] = []
 
 # Loot queue state
 var _pending_loot: Array[EquipmentResource] = []
@@ -290,8 +291,9 @@ func _try_drop_rune() -> void:
 
 	var chosen: RuneResource = candidates[randi() % candidates.size()]
 	RuneManager.unlock_rune(chosen.id)
+	_runes_unlocked_this_run.append(chosen.id)
 	var tier_name: String = RuneResource.Tier.keys()[tier]
-	_log("✨ Rune found: %s [%s] — Check 💎 Runes to equip it!" % [chosen.display_name, tier_name])
+	_log("✨ Rune unlocked: %s [%s] — Equip it before your next run!" % [chosen.display_name, tier_name])
 
 func _on_turn_phase_changed(new_phase: TurnManager.Phase) -> void:
 	game_ui.set_turn_phase(new_phase)
@@ -678,6 +680,7 @@ func _get_run_stats() -> Dictionary:
 		"floor": dungeon_manager.current_floor if dungeon_manager else 1,
 		"depth": dungeon_manager.current_depth if dungeon_manager else 0,
 		"rooms_cleared": dungeon_manager.rooms_completed if dungeon_manager else 0,
+		"new_runes": _runes_unlocked_this_run.duplicate(),
 	}
 
 func _show_game_over_screen() -> void:

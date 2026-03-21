@@ -61,9 +61,31 @@ func _build_ui() -> void:
 	_add_stat_line(stats_box, "Depth", str(_stats.get("depth", 0)))
 	_add_stat_line(stats_box, "Rooms Cleared", str(_stats.get("rooms_cleared", 0)))
 	
+	# Runes unlocked this run
+	var new_runes: Array = _stats.get("new_runes", [])
+	if not new_runes.is_empty():
+		vbox.add_child(HSeparator.new())
+		var rune_title = Label.new()
+		rune_title.text = "✨ Runes Unlocked"
+		rune_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		rune_title.add_theme_font_size_override("font_size", 16)
+		rune_title.add_theme_color_override("font_color", Color(0.9, 0.75, 1.0))
+		vbox.add_child(rune_title)
+		for rune_id in new_runes:
+			var rune = RuneLibrary.get_rune(StringName(str(rune_id)))
+			if rune:
+				var tier_colors = {
+					RuneResource.Tier.COMMON:    Color(0.8, 0.8, 0.8),
+					RuneResource.Tier.RARE:      Color(0.4, 0.6, 1.0),
+					RuneResource.Tier.EPIC:      Color(0.8, 0.4, 1.0),
+					RuneResource.Tier.LEGENDARY: Color(1.0, 0.75, 0.2),
+				}
+				var col = tier_colors.get(rune.tier, Color.WHITE)
+				_add_stat_line(vbox, rune.display_name, RuneResource.Tier.keys()[rune.tier], col)
+
 	# Separator
 	vbox.add_child(HSeparator.new())
-	
+
 	# Return button
 	var btn = Button.new()
 	btn.text = "⚔ Return to Lobby"
@@ -71,20 +93,20 @@ func _build_ui() -> void:
 	btn.pressed.connect(_on_return_pressed)
 	vbox.add_child(btn)
 
-func _add_stat_line(parent: VBoxContainer, label_text: String, value_text: String) -> void:
+func _add_stat_line(parent: VBoxContainer, label_text: String, value_text: String, value_color: Color = Color.WHITE) -> void:
 	var hbox = HBoxContainer.new()
 	parent.add_child(hbox)
-	
+
 	var label = Label.new()
 	label.text = label_text
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 	hbox.add_child(label)
-	
+
 	var value = Label.new()
 	value.text = value_text
 	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	value.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
+	value.add_theme_color_override("font_color", value_color)
 	hbox.add_child(value)
 
 func _on_return_pressed() -> void:

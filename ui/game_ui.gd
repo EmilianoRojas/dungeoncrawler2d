@@ -95,12 +95,7 @@ func _ready() -> void:
 	_stats_button.pressed.connect(_toggle_character_panel)
 	$TopBar/HBoxContainer.add_child(_stats_button)
 
-	# Add Runes button
-	_rune_button = Button.new()
-	_rune_button.text = "💎 Runes"
-	_rune_button.custom_minimum_size = Vector2(80, 0)
-	_rune_button.pressed.connect(func(): rune_panel_requested.emit())
-	$TopBar/HBoxContainer.add_child(_rune_button)
+	# Rune panel is lobby-only — no in-run rune button
 
 	# Currency display
 	_currency_label = Label.new()
