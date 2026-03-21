@@ -268,16 +268,6 @@ func _build_dungeon_tab() -> Control:
 	_d_start_btn.pressed.connect(_on_start_pressed)
 	vb.add_child(_d_start_btn)
 
-	var dev := Button.new()
-	dev.text = "🧪 Battle Test (Dev)"
-	dev.custom_minimum_size = Vector2(0, 36)
-	var ds := StyleBoxFlat.new()
-	ds.bg_color = Color(0.15, 0.10, 0.25, 0.9); ds.border_color = Color(0.5, 0.3, 0.8)
-	ds.set_border_width_all(1); ds.set_corner_radius_all(5)
-	dev.add_theme_stylebox_override("normal", ds)
-	dev.pressed.connect(func(): get_tree().change_scene_to_file("res://test/battle_test.tscn"))
-	vb.add_child(dev)
-
 	# Populate chips and dungeon cards
 	_populate_class_chips()
 	_populate_camp_chips()

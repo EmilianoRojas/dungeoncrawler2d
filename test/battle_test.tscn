@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://battle_test_scene"]
-
-[ext_resource type="Script" path="res://test/battle_test.gd" id="1_btscript"]
-
-[node name="BattleTest" type="Node"]
-script = ExtResource("1_btscript")
