@@ -76,21 +76,45 @@ static func learn_skill(entity: Entity, new_skill: Skill, replace_index: int = -
 ## Load all skill resources from data/skills/ directory.
 static func _load_all_skills() -> Array[Skill]:
 	var skills: Array[Skill] = []
-	
+
+	# Try DirAccess first (works in editor / desktop)
 	var dir = DirAccess.open("res://data/skills/")
-	if not dir:
-		push_error("LevelUpSystem: Cannot open res://data/skills/")
-		return skills
-	
-	dir.list_dir_begin()
-	var file_name = dir.get_next()
-	while file_name != "":
-		if file_name.ends_with(".tres"):
-			var path = "res://data/skills/" + file_name
+	if dir:
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		while file_name != "":
+			if file_name.ends_with(".tres"):
+				var res = load("res://data/skills/" + file_name)
+				if res is Skill:
+					skills.append(res)
+			file_name = dir.get_next()
+		dir.list_dir_end()
+
+	# Fallback: hardcoded list for Android where DirAccess fails on exported PCK
+	if skills.is_empty():
+		var paths := [
+			"res://data/skills/backstab.tres",
+			"res://data/skills/basic_attack.tres",
+			"res://data/skills/bite.tres",
+			"res://data/skills/defensive_stance.tres",
+			"res://data/skills/enrage.tres",
+			"res://data/skills/fireball.tres",
+			"res://data/skills/heal.tres",
+			"res://data/skills/heavy_strike.tres",
+			"res://data/skills/holy_smite.tres",
+			"res://data/skills/ice_shard.tres",
+			"res://data/skills/observe.tres",
+			"res://data/skills/poison_strike.tres",
+			"res://data/skills/quick_slash.tres",
+			"res://data/skills/shield_bash.tres",
+			"res://data/skills/tornado_slash.tres",
+		]
+		for path in paths:
 			var res = load(path)
 			if res is Skill:
 				skills.append(res)
-		file_name = dir.get_next()
-	dir.list_dir_end()
-	
+
+	if skills.is_empty():
+		push_error("LevelUpSystem: No skills loaded — check export include_filter")
+
 	return skills
