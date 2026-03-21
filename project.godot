@@ -15,7 +15,7 @@ run/main_scene="res://ui/main_menu.tscn"
 config/features=PackedStringArray("4.4", "Mobile")
 config/icon="res://icon.png"
 boot_splash/image="res://data/assets/splash.png"
-boot_splash/bg_color=Color(0.10, 0.06, 0.09, 1)
+boot_splash/bg_color=Color(0.58, 0.47, 0.35, 1)
 boot_splash/fullsize=true
 boot_splash/use_filter=false
 
