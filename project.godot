@@ -30,7 +30,7 @@ window/size/viewport_height=640
 window/handheld/orientation=1
 window/stretch/mode="viewport"
 window/stretch/aspect="keep"
-window/stretch/scale_mode="integer"
+window/stretch/scale_mode="fractional"
 
 [dotnet]
 
