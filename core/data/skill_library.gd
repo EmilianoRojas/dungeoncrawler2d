@@ -1,8 +1,14 @@
 class_name SkillLibrary
 # Single source of truth for all skill resources.
-# When you add a new skill .tres, add its path to SKILL_PATHS below.
-# DirAccess can't enumerate files on Android exported builds, so we maintain
-# this list manually — but it only lives in ONE place.
+#
+# ⚠️  ADDING A NEW SKILL:
+#   1. Create  data/skills/your_skill.tres
+#   2. Add its path to SKILL_PATHS below
+#
+# Why the list? Android can't enumerate files inside an exported .pck at runtime
+# (DirAccess.open works in the editor but fails on device). The include_filter
+# glob in export_presets.cfg still handles packing automatically — this list is
+# only needed so the game can find files at runtime on Android.
 
 const SKILL_PATHS: Array[String] = [
 	"res://data/skills/backstab.tres",

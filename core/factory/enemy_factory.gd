@@ -190,27 +190,47 @@ static func _get_templates_by_tier(tier: EnemyTemplate.Tier) -> Array[EnemyTempl
 	return filtered
 
 ## Load all templates from data/enemies/ directory (cached).
+## ⚠️  ADDING A NEW ENEMY: create data/enemies/your_enemy.tres and add its
+##    path to ENEMY_PATHS below (Android can't enumerate PCK dirs at runtime).
+const ENEMY_PATHS: Array[String] = [
+	"res://data/enemies/bat.tres",
+	"res://data/enemies/dark_knight.tres",
+	"res://data/enemies/demon_lord.tres",
+	"res://data/enemies/dragon.tres",
+	"res://data/enemies/goblin.tres",
+	"res://data/enemies/skeleton.tres",
+	"res://data/enemies/slime.tres",
+	"res://data/enemies/wraith.tres",
+]
+
 static func _ensure_templates_loaded() -> void:
 	if not _templates_cache.is_empty():
 		return
-	
+
 	var dir = DirAccess.open("res://data/enemies/")
-	if not dir:
-		push_error("EnemyFactory: Cannot open res://data/enemies/")
-		return
-	
-	dir.list_dir_begin()
-	var file_name = dir.get_next()
-	while file_name != "":
-		if file_name.ends_with(".tres"):
-			var path = "res://data/enemies/" + file_name
+	if dir:
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+		while file_name != "":
+			if file_name.ends_with(".tres"):
+				var res = load("res://data/enemies/" + file_name)
+				if res is EnemyTemplate:
+					_templates_cache.append(res)
+			file_name = dir.get_next()
+		dir.list_dir_end()
+
+	if _templates_cache.is_empty():
+		for path in ENEMY_PATHS:
 			var res = load(path)
 			if res is EnemyTemplate:
 				_templates_cache.append(res)
-		file_name = dir.get_next()
-	dir.list_dir_end()
-	
-	print("EnemyFactory: Loaded %d enemy templates" % _templates_cache.size())
+			else:
+				push_warning("EnemyFactory: fallback load failed for '%s'" % path)
+
+	if _templates_cache.is_empty():
+		push_error("EnemyFactory: No enemy templates loaded!")
+	else:
+		print("EnemyFactory: Loaded %d enemy templates" % _templates_cache.size())
 
 ## Emergency fallback if no templates exist.
 static func _create_fallback_enemy(dungeon_floor: int) -> Entity:
