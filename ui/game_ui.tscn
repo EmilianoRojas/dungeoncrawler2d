@@ -16,12 +16,12 @@ script = ExtResource("1_u7x8y")
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 24.0
+offset_bottom = 40.0
 grow_horizontal = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="TopBar"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 20
 
 [node name="FloorLabel" type="Label" parent="TopBar/HBoxContainer"]
 layout_mode = 2
@@ -51,14 +51,14 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -160.0
-offset_top = -70.0
-offset_right = 160.0
-offset_bottom = 50.0
+offset_left = -300.0
+offset_top = -120.0
+offset_right = 300.0
+offset_bottom = 60.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
-theme_override_constants/separation = 20
+theme_override_constants/separation = 40
 
 [node name="PlayerInfo" type="VBoxContainer" parent="BattleContainer"]
 layout_mode = 2
@@ -71,7 +71,7 @@ text = "Player"
 horizontal_alignment = 1
 
 [node name="SpriteRect" type="TextureRect" parent="BattleContainer/PlayerInfo"]
-custom_minimum_size = Vector2(80, 80)
+custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
@@ -97,7 +97,7 @@ text = "Enemy"
 horizontal_alignment = 1
 
 [node name="SpriteRect" type="TextureRect" parent="BattleContainer/EnemyInfo"]
-custom_minimum_size = Vector2(80, 80)
+custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
@@ -116,14 +116,14 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -155.0
-offset_top = -155.0
-offset_right = 155.0
-offset_bottom = -120.0
+offset_left = -250.0
+offset_top = -280.0
+offset_right = 250.0
+offset_bottom = -220.0
 grow_horizontal = 2
 grow_vertical = 0
 alignment = 1
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
@@ -131,7 +131,7 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -115.0
+offset_top = -200.0
 grow_horizontal = 2
 grow_vertical = 0
 
