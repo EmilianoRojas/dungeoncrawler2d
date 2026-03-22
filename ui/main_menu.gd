@@ -5,10 +5,15 @@ const LOBBY_SCENE := "res://ui/lobby.tscn"
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	UIStyle.apply_background(self)
 	_build_ui()
 
 func _build_ui() -> void:
+	var bg := ColorRect.new()
+	bg.color = Color(0.08, 0.08, 0.12, 1.0)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(bg)
+
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
@@ -21,7 +26,13 @@ func _build_ui() -> void:
 
 	# ── Title block ─────────────────────────────────────────────
 	var title_panel := PanelContainer.new()
-	UIStyle.apply_panel(title_panel)
+	var title_sty := StyleBoxFlat.new()
+	title_sty.bg_color = Color(0.08, 0.08, 0.14, 0.95)
+	title_sty.border_color = Color(0.5, 0.4, 0.7)
+	title_sty.set_border_width_all(2)
+	title_sty.set_corner_radius_all(8)
+	title_sty.set_content_margin_all(20)
+	title_panel.add_theme_stylebox_override("panel", title_sty)
 	vbox.add_child(title_panel)
 
 	var title_vbox := VBoxContainer.new()
