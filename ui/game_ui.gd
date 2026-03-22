@@ -65,6 +65,10 @@ var _skill_tooltip: Control = null
 var _tooltip_hide_timer: Timer = null
 
 func _ready() -> void:
+	# Pixel art: nearest-neighbor on sprite rects only (not global)
+	player_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	enemy_sprite.texture_filter  = CanvasItem.TEXTURE_FILTER_NEAREST
+
 	# Initialize Room Selector
 	room_selector = ROOM_SELECTOR_SCENE.instantiate()
 	add_child(room_selector)
