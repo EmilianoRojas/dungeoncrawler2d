@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_005"]
+[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_005.png" id="sprite_005"]
+[ext_resource type="Resource" path="res://data/skills/shield_bash.tres" id="skill_0_005"]
+
+[resource]
+script = ExtResource("1_005")
+enemy_name = "Netherclaw"
+tier = 0
+sprite = ExtResource("sprite_005")
+base_stats = {&"max_hp": 45, &"hp": 45, &"strength": 6, &"dexterity": 4, &"defense": 3, &"speed": 2}
+stat_scaling = 0.12
+skills = [ExtResource("skill_0_005")]

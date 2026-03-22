@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_010"]
+[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_010.png" id="sprite_010"]
+[ext_resource type="Resource" path="res://data/skills/quick_slash.tres" id="skill_0_010"]
+
+[resource]
+script = ExtResource("1_010")
+enemy_name = "Mouldcreep"
+tier = 0
+sprite = ExtResource("sprite_010")
+base_stats = {&"max_hp": 31, &"hp": 31, &"strength": 6, &"dexterity": 8, &"defense": 4, &"speed": 3}
+stat_scaling = 0.12
+skills = [ExtResource("skill_0_010")]

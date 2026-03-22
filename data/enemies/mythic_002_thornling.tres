@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_002"]
+[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_002.png" id="sprite_002"]
+[ext_resource type="Resource" path="res://data/skills/poison_strike.tres" id="skill_0_002"]
+
+[resource]
+script = ExtResource("1_002")
+enemy_name = "Thornling"
+tier = 0
+sprite = ExtResource("sprite_002")
+base_stats = {&"max_hp": 31, &"hp": 31, &"strength": 8, &"dexterity": 8, &"defense": 5, &"speed": 2}
+stat_scaling = 0.12
+skills = [ExtResource("skill_0_002")]

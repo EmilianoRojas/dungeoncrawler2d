@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_031"]
+[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_031.png" id="sprite_031"]
+[ext_resource type="Resource" path="res://data/skills/ice_shard.tres" id="skill_0_031"]
+[ext_resource type="Resource" path="res://data/skills/basic_attack.tres" id="skill_1_031"]
+[ext_resource type="Resource" path="res://data/skills/fireball.tres" id="skill_2_031"]
+
+[resource]
+script = ExtResource("1_031")
+enemy_name = "Netherlord"
+tier = 2
+sprite = ExtResource("sprite_031")
+base_stats = {&"max_hp": 156, &"hp": 156, &"strength": 19, &"dexterity": 12, &"defense": 12, &"speed": 4}
+stat_scaling = 0.12
+skills = [ExtResource("skill_0_031"), ExtResource("skill_1_031"), ExtResource("skill_2_031")]

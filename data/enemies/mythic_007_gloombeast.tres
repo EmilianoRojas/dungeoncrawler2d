@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_007"]
+[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_007.png" id="sprite_007"]
+[ext_resource type="Resource" path="res://data/skills/bite.tres" id="skill_0_007"]
+
+[resource]
+script = ExtResource("1_007")
+enemy_name = "Gloombeast"
+tier = 0
+sprite = ExtResource("sprite_007")
+base_stats = {&"max_hp": 30, &"hp": 30, &"strength": 6, &"dexterity": 6, &"defense": 1, &"speed": 3}
+stat_scaling = 0.12
+skills = [ExtResource("skill_0_007")]

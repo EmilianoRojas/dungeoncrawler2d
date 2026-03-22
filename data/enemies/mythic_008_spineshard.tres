@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_008"]
+[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_008.png" id="sprite_008"]
+[ext_resource type="Resource" path="res://data/skills/ice_shard.tres" id="skill_0_008"]
+
+[resource]
+script = ExtResource("1_008")
+enemy_name = "Spineshard"
+tier = 0
+sprite = ExtResource("sprite_008")
+base_stats = {&"max_hp": 55, &"hp": 55, &"strength": 8, &"dexterity": 3, &"defense": 4, &"speed": 4}
+stat_scaling = 0.12
+skills = [ExtResource("skill_0_008")]

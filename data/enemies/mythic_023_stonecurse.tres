@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_023"]
+[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_023.png" id="sprite_023"]
+[ext_resource type="Resource" path="res://data/skills/fireball.tres" id="skill_0_023"]
+[ext_resource type="Resource" path="res://data/skills/basic_attack.tres" id="skill_1_023"]
+
+[resource]
+script = ExtResource("1_023")
+enemy_name = "Stonecurse"
+tier = 1
+sprite = ExtResource("sprite_023")
+base_stats = {&"max_hp": 93, &"hp": 93, &"strength": 13, &"dexterity": 10, &"defense": 5, &"speed": 3}
+stat_scaling = 0.12
+skills = [ExtResource("skill_0_023"), ExtResource("skill_1_023")]

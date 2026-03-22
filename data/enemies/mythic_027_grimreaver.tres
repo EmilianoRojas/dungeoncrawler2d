@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_027"]
+[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_027.png" id="sprite_027"]
+[ext_resource type="Resource" path="res://data/skills/backstab.tres" id="skill_0_027"]
+[ext_resource type="Resource" path="res://data/skills/shield_bash.tres" id="skill_1_027"]
+
+[resource]
+script = ExtResource("1_027")
+enemy_name = "Grimreaver"
+tier = 1
+sprite = ExtResource("sprite_027")
+base_stats = {&"max_hp": 90, &"hp": 90, &"strength": 14, &"dexterity": 7, &"defense": 8, &"speed": 5}
+stat_scaling = 0.12
+skills = [ExtResource("skill_0_027"), ExtResource("skill_1_027")]
