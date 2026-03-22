@@ -33,7 +33,16 @@ func _build_ui() -> void:
 	# Main panel
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(380, 0)
-	UIStyle.apply_panel(panel)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.12, 0.12, 0.18, 0.95)
+	style.border_color = _get_rarity_color()
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(8)
+	style.content_margin_left   = 20
+	style.content_margin_right  = 20
+	style.content_margin_top    = 16
+	style.content_margin_bottom = 16
+	panel.add_theme_stylebox_override("panel", style)
 	add_child(panel)
 	
 	var vbox = VBoxContainer.new()

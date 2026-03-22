@@ -5,39 +5,6 @@ extends ProgressBar
 
 var is_shield: bool = false
 
-const UI_PATH := "res://data/assets/ui/"
-
-func _ready() -> void:
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_apply_texture_style()
-
-func _apply_texture_style() -> void:
-	# Background: dark interior matching the panel interior color
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.12, 0.07, 0.10, 1.0)
-	bg.set_content_margin_all(4.0)
-	add_theme_stylebox_override("background", bg)
-
-	# Fill: pixel art color strip
-	var fill := StyleBoxTexture.new()
-	fill.texture = load(UI_PATH + ("ValueBlue_120x8.png" if is_shield else "ValueRed_120x8.png"))
-	add_theme_stylebox_override("fill", fill)
-
-	# Frame: NinePatchRect overlay drawn on top of the fill
-	if not has_node("Frame"):
-		var frame := NinePatchRect.new()
-		frame.name = "Frame"
-		frame.texture = load(UI_PATH + "ValueBar_128x16.png")
-		frame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		frame.patch_margin_left   = 4
-		frame.patch_margin_right  = 4
-		frame.patch_margin_top    = 4
-		frame.patch_margin_bottom = 4
-		frame.set_anchors_preset(Control.PRESET_FULL_RECT)
-		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		frame.z_index = 2
-		add_child(frame)
-
 func update_health(current: int, max_val: int) -> void:
 	max_value = max_val
 	value = current
@@ -55,6 +22,10 @@ func update_health_animated(current: int, max_val: int, duration: float = 0.3) -
 
 func set_as_shield() -> void:
 	is_shield = true
-	var fill := StyleBoxTexture.new()
-	fill.texture = load(UI_PATH + "ValueBlue_120x8.png")
-	add_theme_stylebox_override("fill", fill)
+	add_theme_stylebox_override("fill", _create_shield_style())
+
+func _create_shield_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.3, 0.6, 0.9, 1.0)
+	style.set_corner_radius_all(2)
+	return style
