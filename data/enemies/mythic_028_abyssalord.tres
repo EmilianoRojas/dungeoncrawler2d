@@ -1,7 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyTemplate" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_028"]
-[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_028.png" id="sprite_028"]
 [ext_resource type="Resource" path="res://data/skills/bite.tres" id="skill_0_028"]
 [ext_resource type="Resource" path="res://data/skills/backstab.tres" id="skill_1_028"]
 [ext_resource type="Resource" path="res://data/skills/quick_slash.tres" id="skill_2_028"]
@@ -10,7 +9,7 @@
 script = ExtResource("1_028")
 enemy_name = "Abyssalord"
 tier = 2
-sprite = ExtResource("sprite_028")
+sprite_path = "res://data/assets/enemies/monster_028.png"
 base_stats = {&"max_hp": 184, &"hp": 184, &"strength": 26, &"dexterity": 10, &"defense": 11, &"speed": 6}
 stat_scaling = 0.12
 skills = [ExtResource("skill_0_028"), ExtResource("skill_1_028"), ExtResource("skill_2_028")]

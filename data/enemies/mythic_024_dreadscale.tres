@@ -1,7 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyTemplate" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_024"]
-[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_024.png" id="sprite_024"]
 [ext_resource type="Resource" path="res://data/skills/tornado_slash.tres" id="skill_0_024"]
 [ext_resource type="Resource" path="res://data/skills/enrage.tres" id="skill_1_024"]
 
@@ -9,7 +8,7 @@
 script = ExtResource("1_024")
 enemy_name = "Dreadscale"
 tier = 1
-sprite = ExtResource("sprite_024")
+sprite_path = "res://data/assets/enemies/monster_024.png"
 base_stats = {&"max_hp": 67, &"hp": 67, &"strength": 18, &"dexterity": 8, &"defense": 7, &"speed": 3}
 stat_scaling = 0.12
 skills = [ExtResource("skill_0_024"), ExtResource("skill_1_024")]

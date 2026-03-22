@@ -1,14 +1,13 @@
 [gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_016"]
-[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_016.png" id="sprite_016"]
 [ext_resource type="Resource" path="res://data/skills/fireball.tres" id="skill_0_016"]
 
 [resource]
 script = ExtResource("1_016")
 enemy_name = "Hexbrood"
 tier = 0
-sprite = ExtResource("sprite_016")
+sprite_path = "res://data/assets/enemies/monster_016.png"
 base_stats = {&"max_hp": 43, &"hp": 43, &"strength": 10, &"dexterity": 8, &"defense": 5, &"speed": 4}
 stat_scaling = 0.12
 skills = [ExtResource("skill_0_016")]

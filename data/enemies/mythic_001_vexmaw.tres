@@ -1,14 +1,13 @@
 [gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_001"]
-[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_001.png" id="sprite_001"]
 [ext_resource type="Resource" path="res://data/skills/poison_strike.tres" id="skill_0_001"]
 
 [resource]
 script = ExtResource("1_001")
 enemy_name = "Vexmaw"
 tier = 0
-sprite = ExtResource("sprite_001")
+sprite_path = "res://data/assets/enemies/monster_001.png"
 base_stats = {&"max_hp": 38, &"hp": 38, &"strength": 5, &"dexterity": 6, &"defense": 1, &"speed": 2}
 stat_scaling = 0.12
 skills = [ExtResource("skill_0_001")]

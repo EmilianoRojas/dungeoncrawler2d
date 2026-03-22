@@ -15,8 +15,11 @@ const SCALING_SLOW_FACTOR: float = 0.33 # Combat stats scale at 33% of the base 
 static func create_enemy(template: EnemyTemplate, dungeon_floor: int) -> Entity:
 	var enemy = Entity.new()
 	enemy.name = template.enemy_name
+	# Try embedded Texture2D first, fall back to explicit path load (Android PCK)
 	if template.sprite:
 		enemy.sprite = template.sprite
+	elif template.sprite_path != "":
+		enemy.sprite = load(template.sprite_path)
 	enemy.team = Entity.Team.ENEMY
 	enemy.initialize()
 	

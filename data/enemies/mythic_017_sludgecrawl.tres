@@ -1,14 +1,13 @@
 [gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_017"]
-[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_017.png" id="sprite_017"]
 [ext_resource type="Resource" path="res://data/skills/enrage.tres" id="skill_0_017"]
 
 [resource]
 script = ExtResource("1_017")
 enemy_name = "Sludgecrawl"
 tier = 0
-sprite = ExtResource("sprite_017")
+sprite_path = "res://data/assets/enemies/monster_017.png"
 base_stats = {&"max_hp": 37, &"hp": 37, &"strength": 5, &"dexterity": 8, &"defense": 5, &"speed": 4}
 stat_scaling = 0.12
 skills = [ExtResource("skill_0_017")]

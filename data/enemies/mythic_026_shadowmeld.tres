@@ -1,7 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyTemplate" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_026"]
-[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_026.png" id="sprite_026"]
 [ext_resource type="Resource" path="res://data/skills/shield_bash.tres" id="skill_0_026"]
 [ext_resource type="Resource" path="res://data/skills/basic_attack.tres" id="skill_1_026"]
 
@@ -9,7 +8,7 @@
 script = ExtResource("1_026")
 enemy_name = "Shadowmeld"
 tier = 1
-sprite = ExtResource("sprite_026")
+sprite_path = "res://data/assets/enemies/monster_026.png"
 base_stats = {&"max_hp": 88, &"hp": 88, &"strength": 15, &"dexterity": 7, &"defense": 5, &"speed": 4}
 stat_scaling = 0.12
 skills = [ExtResource("skill_0_026"), ExtResource("skill_1_026")]

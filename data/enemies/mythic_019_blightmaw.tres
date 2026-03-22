@@ -1,14 +1,13 @@
 [gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_019"]
-[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_019.png" id="sprite_019"]
 [ext_resource type="Resource" path="res://data/skills/shield_bash.tres" id="skill_0_019"]
 
 [resource]
 script = ExtResource("1_019")
 enemy_name = "Blightmaw"
 tier = 0
-sprite = ExtResource("sprite_019")
+sprite_path = "res://data/assets/enemies/monster_019.png"
 base_stats = {&"max_hp": 43, &"hp": 43, &"strength": 6, &"dexterity": 6, &"defense": 3, &"speed": 4}
 stat_scaling = 0.12
 skills = [ExtResource("skill_0_019")]

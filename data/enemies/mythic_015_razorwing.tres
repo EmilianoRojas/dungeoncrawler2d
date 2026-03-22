@@ -1,14 +1,13 @@
 [gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_015"]
-[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_015.png" id="sprite_015"]
 [ext_resource type="Resource" path="res://data/skills/fireball.tres" id="skill_0_015"]
 
 [resource]
 script = ExtResource("1_015")
 enemy_name = "Razorwing"
 tier = 0
-sprite = ExtResource("sprite_015")
+sprite_path = "res://data/assets/enemies/monster_015.png"
 base_stats = {&"max_hp": 46, &"hp": 46, &"strength": 6, &"dexterity": 7, &"defense": 1, &"speed": 2}
 stat_scaling = 0.12
 skills = [ExtResource("skill_0_015")]

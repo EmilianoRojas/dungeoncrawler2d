@@ -9,3 +9,4 @@ enum Tier {NORMAL, ELITE, BOSS}
 @export var skills: Array[Skill] = []
 @export var stat_scaling: float = 0.12 # Per-floor multiplier: stats * (1 + floor * scaling)
 @export var sprite: Texture2D
+@export var sprite_path: String = "" # Explicit path fallback for Android PCK loading

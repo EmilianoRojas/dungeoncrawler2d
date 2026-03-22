@@ -1,7 +1,6 @@
 [gd_resource type="Resource" script_class="EnemyTemplate" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_029"]
-[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_029.png" id="sprite_029"]
 [ext_resource type="Resource" path="res://data/skills/basic_attack.tres" id="skill_0_029"]
 [ext_resource type="Resource" path="res://data/skills/poison_strike.tres" id="skill_1_029"]
 [ext_resource type="Resource" path="res://data/skills/shield_bash.tres" id="skill_2_029"]
@@ -10,7 +9,7 @@
 script = ExtResource("1_029")
 enemy_name = "Soulrender"
 tier = 2
-sprite = ExtResource("sprite_029")
+sprite_path = "res://data/assets/enemies/monster_029.png"
 base_stats = {&"max_hp": 131, &"hp": 131, &"strength": 16, &"dexterity": 17, &"defense": 11, &"speed": 3}
 stat_scaling = 0.12
 skills = [ExtResource("skill_0_029"), ExtResource("skill_1_029"), ExtResource("skill_2_029")]

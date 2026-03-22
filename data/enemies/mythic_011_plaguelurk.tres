@@ -1,14 +1,13 @@
 [gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_011"]
-[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_011.png" id="sprite_011"]
 [ext_resource type="Resource" path="res://data/skills/poison_strike.tres" id="skill_0_011"]
 
 [resource]
 script = ExtResource("1_011")
 enemy_name = "Plaguelurk"
 tier = 0
-sprite = ExtResource("sprite_011")
+sprite_path = "res://data/assets/enemies/monster_011.png"
 base_stats = {&"max_hp": 53, &"hp": 53, &"strength": 6, &"dexterity": 5, &"defense": 2, &"speed": 2}
 stat_scaling = 0.12
 skills = [ExtResource("skill_0_011")]

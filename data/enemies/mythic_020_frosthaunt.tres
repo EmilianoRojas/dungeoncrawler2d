@@ -1,14 +1,13 @@
 [gd_resource type="Resource" script_class="EnemyTemplate" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://core/data/enemy_template.gd" id="1_020"]
-[ext_resource type="Texture2D" path="res://data/assets/enemies/monster_020.png" id="sprite_020"]
 [ext_resource type="Resource" path="res://data/skills/holy_smite.tres" id="skill_0_020"]
 
 [resource]
 script = ExtResource("1_020")
 enemy_name = "Frosthaunt"
 tier = 0
-sprite = ExtResource("sprite_020")
+sprite_path = "res://data/assets/enemies/monster_020.png"
 base_stats = {&"max_hp": 52, &"hp": 52, &"strength": 10, &"dexterity": 3, &"defense": 1, &"speed": 3}
 stat_scaling = 0.12
 skills = [ExtResource("skill_0_020")]
